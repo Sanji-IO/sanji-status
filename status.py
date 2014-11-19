@@ -37,6 +37,7 @@ class Status(Sanji):
                 self.model.db["cpuPush"] = 1
                 self.model.save_db()
 
+                # start thread
                 rc = self.start_cpu_thread()
                 if rc is True:
                     # response 200
@@ -46,19 +47,24 @@ class Status(Sanji):
                     print "response 400"
 
         # TODO: server push once
-        print("message.query: %s" % message.query["push"])
+        print("server push once message.query: %s" % message.query["push"])
         # return response(data={"enable": self.model.db["enable"]})
 
-    '''
     @Route(methods="put", resource="/system/status/cpu")
     def put_cpu(self, message, response):
-        if hasattr(message, "data") and "enable" in message.data:
-            self.model.db["enable"] = message.data["enable"]
+        print "in put_cpu"
+        if hasattr(message, "data") and message.data["cpuPush"] == 0:
+            self.model.db["cpuPush"] = message.data["cpuPush"]
             self.model.save_db()
-            self.update_ssh()
-            return response(code=self.rsp["code"], data=self.rsp["data"])
+
+            # kill thread 
+            rc = self.kill_cpu_thread()
+            if rc is True:
+                return response(data=self.model.db)
+            return response(code=400, data={"message": "cpu status error"})
         return response(code=400, data={"message": "Invaild Input"})
 
+    '''
     @Route(methods="get", resource="/system/status/memory")
     def get_memory(self, message, response):
         return response(data={"enable": self.model.db["enable"]})
@@ -96,8 +102,6 @@ class Status(Sanji):
         # save to thread pool
         self.cpu_thread_pool.append(t)
         print("start_cpu_thread thread pool: %s" % self.cpu_thread_pool)
-        time.sleep(20)
-        self.kill_cpu_thread()
         return True
 
     def kill_cpu_thread(self):
@@ -124,11 +128,19 @@ class Status(Sanji):
 
 class CpuThread(threading.Thread):
 
+    def __init__(self):
+        super(CpuThread, self).__init__()
+        self.stoprequest = threading.Event()
+
     def run(self):
-        print "in CpuThread run"
+        while not self.stoprequest.isSet():
+            print "in CpuThread run"
+            time.sleep(1)
 
     def join(self):
         print "in CpuThread join"
+        self.stoprequest.set()
+        super(CpuThread, self).join()
 
 if __name__ == '__main__':
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
