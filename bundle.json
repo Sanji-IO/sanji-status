@@ -1,0 +1,22 @@
+{
+  "name": "status",
+  "version": "1.0",
+  "author": "Jordan Chen",
+  "email": "jordan.chen@moxa.com",
+  "description": "Handle the data of status",
+  "license": "MOXA",
+  "main": "status.py",
+  "argument": "",
+  "priority": 25,
+  "hook": [],
+  "dependencies": {},
+  "repository": "",
+  "role": "model",
+  "ttl": 10,
+  "resources": [
+    {
+   "methods": ["get", "put"],
+   "resource": "/system/status"
+    }
+  ]
+}
