@@ -31,50 +31,44 @@ class Status(Sanji):
         self.memory_thread_pool = []
         self.disk_thread_pool = []
 
-    # @Route(methods="get", resource="/system/status/cpu")
-    # def get_cpu(self, message, response):
-    #     if "push" in message.query:
-    #         if message.query["push"] == "true":
-    #             self.model.db["cpuPush"] = 1
-    #             self.model.save_db()
+    @Route(methods="get", resource="/system/status/cpu")
+    def get_cpu(self, message, response):
+        if "push" in message.query:
+            if message.query["push"] == "true":
+                self.model.db["cpuPush"] = 1
+                self.model.save_db()
 
-    #             # start thread
-    #             rc = self.start_cpu_thread()
-    #             if rc is True:
-    #                 return response(data=self.model.db)
-    #             else:
-    #                 return response(code=400,
-    #                                 data={"message": "server push failed"})
+                # start thread
+                rc = self.start_cpu_thread()
+                if rc is True:
+                    return response(data=self.model.db)
+                else:
+                    return response(code=400,
+                                    data={"message": "server push failed"})
 
-    #     # push query is false, return db
-    #     return response(data=self.model.db)
+        # push query is false, return db
+        return response(data=self.model.db)
 
-    # @Route(methods="put", resource="/system/status/cpu")
-    # def put_cpu(self, message, response):
-    #     if hasattr(message, "data") and message.data["cpuPush"] == 0:
-    #         self.model.db["cpuPush"] = message.data["cpuPush"]
-    #         self.model.save_db()
+    @Route(methods="put", resource="/system/status/cpu")
+    def put_cpu(self, message, response):
+        if hasattr(message, "data") and message.data["cpuPush"] == 0:
+            self.model.db["cpuPush"] = message.data["cpuPush"]
+            self.model.save_db()
 
-    #         # kill thread 
-    #         rc = self.kill_cpu_thread()
-    #         if rc is True:
-    #             return response(data=self.model.db)
-    #         return response(code=400, data={"message": "cpu status error"})
-    #     return response(code=400, data={"message": "Invaild Input"})
+            # kill thread 
+            rc = self.kill_cpu_thread()
+            if rc is True:
+                return response(data=self.model.db)
+            return response(code=400, data={"message": "cpu status error"})
+        return response(code=400, data={"message": "Invaild Input"})
 
     @Route(methods="get", resource="/system/status/memory")
     def get_memory(self, message, response):
-        logger.debug("in get memory")
         if "push" in message.query:
             if message.query["push"] == "true":
                 self.model.db["memoryPush"] = 1
                 self.model.save_db()
 
-                self.get_memory_data()
-                ConvertData.get_time()
-                return response(data=self.model.db)
-
-                '''
                 # start thread
                 rc = self.start_memory_thread()
                 if rc is True:
@@ -82,20 +76,24 @@ class Status(Sanji):
                 else:
                     return response(code=400,
                                     data={"message": "server push failed"})
-                '''
-        # push query is false, return db
-        return response(data={"enable": self.model.db["enable"]})
 
-    '''
+        # push query is false, return db
+        return response(data=self.model.db)
+
     @Route(methods="put", resource="/system/status/memory")
     def put_memory(self, message, response):
-        if hasattr(message, "data") and "enable" in message.data:
-            self.model.db["enable"] = message.data["enable"]
+        if hasattr(message, "data") and message.data["memoryPush"] == 0:
+            self.model.db["memoryPush"] = message.data["memoryPush"]
             self.model.save_db()
-            self.update_ssh()
-            return response(code=self.rsp["code"], data=self.rsp["data"])
+
+            # kill thread 
+            rc = self.kill_memory_thread()
+            if rc is True:
+                return response(data=self.model.db)
+            return response(code=400, data={"message": "memory status error"})
         return response(code=400, data={"message": "Invaild Input"})
 
+    '''
     @Route(methods="get", resource="/system/status/disk")
     def get_disk(self, message, response):
         return response(data={"enable": self.model.db["enable"]})
@@ -134,7 +132,7 @@ class Status(Sanji):
         except Exception as e:
             logger.debug("kill cpu thread error: %s" % e)
             return False
-    '''
+
     def start_memory_thread(self):
         kill_rc = self.kill_memory_thread()
         if kill_rc is False:
@@ -160,12 +158,6 @@ class Status(Sanji):
         except Exception as e:
             logger.debug("kill memory thread error: %s" % e)
             return False
-    '''
-    def get_memory_data(self):
-        logger.debug("in get_memory_data")
-        mem = psutil.virtual_memory()
-        print("mem available:%s" % mem.total)
-        print("mem available:%s" % ConvertData.human_size(mem.total))
 
 
 class ConvertData:
@@ -192,7 +184,7 @@ class ConvertData:
     def get_time():
         current_time = time.strftime("%Y/%m/%d %H:%M:%S",
                                      time.localtime(time.time()))
-        print("current_time:%s" % current_time)
+        return current_time
 
 
 class CpuThread(threading.Thread, Sanji):
@@ -224,6 +216,42 @@ class CpuThread(threading.Thread, Sanji):
         logger.debug("cpu usage:%f" % cpu_usage)
         return cpu_usage
 
+
+class MemoryThread(threading.Thread, Sanji):
+
+    def __init__(self):
+        super(MemoryThread, self).__init__()
+        self.stoprequest = threading.Event()
+
+    def run(self):
+        while not self.stoprequest.isSet():
+            # get cpu usage
+            memory_data = self.get_memory_data()
+            logger.debug("memory_data:%s" % memory_data)
+            # server push data
+            # self.publish.event("/remote/sanji/events",
+            #                   data={"time": ConvertData.get_time(),
+            #                         "usage": usage})
+            time.sleep(3)
+
+    def join(self):
+        logger.debug("join thread")
+        # set event to stop while loop in run
+        self.stoprequest.set()
+        super(MemoryThread, self).join()
+
+    def get_memory_data(self):
+        logger.debug("in get_memory_data")
+        mem = psutil.virtual_memory()
+        print("mem available:%s" % mem.total)
+        print("mem available:%s" % ConvertData.human_size(mem.total))
+        data = {"time": ConvertData.get_time(),
+                "total": ConvertData.human_size(mem.total),
+                "used": ConvertData.human_size(mem.used),
+                "free": ConvertData.human_size(mem.free),
+                "usedPercentage": round(((float(mem.used)/mem.total)*100),
+                                        ndigits=1)}
+        return data
 
 if __name__ == '__main__':
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
