@@ -16,7 +16,11 @@
   "resources": [
     {
    "methods": ["get", "put"],
-   "resource": "/system/status"
+   "resource": "/system/status/cpu"
+    },
+    {
+   "methods": ["get", "put"],
+   "resource": "/system/status/memory"
     }
   ]
 }

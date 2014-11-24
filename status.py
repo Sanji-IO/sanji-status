@@ -5,6 +5,7 @@ import logging
 import os
 import threading
 import time
+import psutil
 from sanji.core import Sanji
 from sanji.core import Route
 from sanji.model_initiator import ModelInitiator
@@ -30,45 +31,62 @@ class Status(Sanji):
         self.memory_thread_pool = []
         self.disk_thread_pool = []
 
-    @Route(methods="get", resource="/system/status/cpu")
-    def get_cpu(self, message, response):
-        if "push" in message.query:
-            if message.query["push"] == "true":
-                self.model.db["cpuPush"] = 1
-                self.model.save_db()
+    # @Route(methods="get", resource="/system/status/cpu")
+    # def get_cpu(self, message, response):
+    #     if "push" in message.query:
+    #         if message.query["push"] == "true":
+    #             self.model.db["cpuPush"] = 1
+    #             self.model.save_db()
 
-                # start thread
-                rc = self.start_cpu_thread()
-                if rc is True:
-                    # response 200
-                    print "response 200"
-                else:
-                    # response 400
-                    print "response 400"
+    #             # start thread
+    #             rc = self.start_cpu_thread()
+    #             if rc is True:
+    #                 return response(data=self.model.db)
+    #             else:
+    #                 return response(code=400,
+    #                                 data={"message": "server push failed"})
 
-        # TODO: server push once
-        print("server push once message.query: %s" % message.query["push"])
-        # return response(data={"enable": self.model.db["enable"]})
+    #     # push query is false, return db
+    #     return response(data=self.model.db)
 
-    @Route(methods="put", resource="/system/status/cpu")
-    def put_cpu(self, message, response):
-        print "in put_cpu"
-        if hasattr(message, "data") and message.data["cpuPush"] == 0:
-            self.model.db["cpuPush"] = message.data["cpuPush"]
-            self.model.save_db()
+    # @Route(methods="put", resource="/system/status/cpu")
+    # def put_cpu(self, message, response):
+    #     if hasattr(message, "data") and message.data["cpuPush"] == 0:
+    #         self.model.db["cpuPush"] = message.data["cpuPush"]
+    #         self.model.save_db()
 
-            # kill thread 
-            rc = self.kill_cpu_thread()
-            if rc is True:
-                return response(data=self.model.db)
-            return response(code=400, data={"message": "cpu status error"})
-        return response(code=400, data={"message": "Invaild Input"})
+    #         # kill thread 
+    #         rc = self.kill_cpu_thread()
+    #         if rc is True:
+    #             return response(data=self.model.db)
+    #         return response(code=400, data={"message": "cpu status error"})
+    #     return response(code=400, data={"message": "Invaild Input"})
 
-    '''
     @Route(methods="get", resource="/system/status/memory")
     def get_memory(self, message, response):
+        logger.debug("in get memory")
+        if "push" in message.query:
+            if message.query["push"] == "true":
+                self.model.db["memoryPush"] = 1
+                self.model.save_db()
+
+                self.get_memory_data()
+                ConvertData.get_time()
+                return response(data=self.model.db)
+
+                '''
+                # start thread
+                rc = self.start_memory_thread()
+                if rc is True:
+                    return response(data=self.model.db)
+                else:
+                    return response(code=400,
+                                    data={"message": "server push failed"})
+                '''
+        # push query is false, return db
         return response(data={"enable": self.model.db["enable"]})
 
+    '''
     @Route(methods="put", resource="/system/status/memory")
     def put_memory(self, message, response):
         if hasattr(message, "data") and "enable" in message.data:
@@ -101,32 +119,83 @@ class Status(Sanji):
         t.start()
         # save to thread pool
         self.cpu_thread_pool.append(t)
-        print("start_cpu_thread thread pool: %s" % self.cpu_thread_pool)
+        logger.debug("start_cpu_thread thread pool: %s" % self.cpu_thread_pool)
         return True
 
     def kill_cpu_thread(self):
         try:
         # kill thread from thread pool
-            print("in kill cpu thread: thread pool:%s" % self.cpu_thread_pool)
+            logger.debug("kill cpu thread pool:%s" % self.cpu_thread_pool)
             for thread in self.cpu_thread_pool:
-                print ("start to kill thread:%s" % thread)
                 thread.join()
-                print ("end to kill thread:%s" % thread)
             # flush thread pool
             self.cpu_thread_pool = []
             return True
         except Exception as e:
-            logger.debug("kill thread error: %s" % e)
+            logger.debug("kill cpu thread error: %s" % e)
             return False
+    '''
+    def start_memory_thread(self):
+        kill_rc = self.kill_memory_thread()
+        if kill_rc is False:
+            return False
+        # start call thread to server push
+        t = MemoryThread()
+        t.start()
+        # save to thread pool
+        self.memory_thread_pool.append(t)
+        logger.debug("start_memory_thread thread pool: %s" %
+                     self.memory_thread_pool)
+        return True
 
-    def push_memory_data(self, enable):
-        pass
+    def kill_memory_thread(self):
+        try:
+            logger.debug("kill memory thread pool:%s" %
+                         self.memory_thread_pool)
+            for thread in self.memory_thread_pool:
+                thread.join()
+            # flush thread pool
+            self.memory_thread_pool = []
+            return True
+        except Exception as e:
+            logger.debug("kill memory thread error: %s" % e)
+            return False
+    '''
+    def get_memory_data(self):
+        logger.debug("in get_memory_data")
+        mem = psutil.virtual_memory()
+        print("mem available:%s" % mem.total)
+        print("mem available:%s" % ConvertData.human_size(mem.total))
 
-    def push_disk_data(self, enable):
-        pass
+
+class ConvertData:
+    # convert size
+    @staticmethod
+    def human_size(size_bytes):
+        if size_bytes == 0:
+            return "0 Byte"
+        suffixes_table = [("bytes", 0), ("KB", 0), ("MB", 1), ("GB", 2)]
+        num = float(size_bytes)
+        for suffix, percision in suffixes_table:
+            if num < 1024.0:
+                break
+            num /= 1024.0
+
+        # convert to correct percision
+        if percision == 0:
+            formatted_size = ("%d" % num)
+        else:
+            formatted_size = str(round(num, ndigits=percision))
+        return "%s %s" % (formatted_size, suffix)
+
+    @staticmethod
+    def get_time():
+        current_time = time.strftime("%Y/%m/%d %H:%M:%S",
+                                     time.localtime(time.time()))
+        print("current_time:%s" % current_time)
 
 
-class CpuThread(threading.Thread):
+class CpuThread(threading.Thread, Sanji):
 
     def __init__(self):
         super(CpuThread, self).__init__()
@@ -134,13 +203,27 @@ class CpuThread(threading.Thread):
 
     def run(self):
         while not self.stoprequest.isSet():
-            print "in CpuThread run"
-            time.sleep(1)
+            # get cpu usage
+            usage = self.grep_data()
+            logger.debug("cpu usage:%f" % usage)
+            # server push data
+            # self.publish.event("/remote/sanji/events",
+            #                   data={"time": ConvertData.get_time(),
+            #                         "usage": usage})
+            time.sleep(6)
 
     def join(self):
-        print "in CpuThread join"
+        logger.debug("join thread")
+        # set event to stop while loop in run
         self.stoprequest.set()
         super(CpuThread, self).join()
+
+    # grep cpu data
+    def grep_data(self):
+        cpu_usage = psutil.cpu_percent(interval=1)
+        logger.debug("cpu usage:%f" % cpu_usage)
+        return cpu_usage
+
 
 if __name__ == '__main__':
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
