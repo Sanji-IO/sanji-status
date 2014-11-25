@@ -26,7 +26,7 @@ class Status(Sanji):
         self.model.db["diskPush"] = 0
         self.model.save_db()
 
-        # init thread pool 
+        # init thread pool
         self.cpu_thread_pool = []
         self.memory_thread_pool = []
         self.disk_thread_pool = []
@@ -55,7 +55,7 @@ class Status(Sanji):
             self.model.db["cpuPush"] = message.data["cpuPush"]
             self.model.save_db()
 
-            # kill thread 
+            # kill thread
             rc = self.kill_cpu_thread()
             if rc is True:
                 return response(data=self.model.db)
@@ -86,7 +86,7 @@ class Status(Sanji):
             self.model.db["memoryPush"] = message.data["memoryPush"]
             self.model.save_db()
 
-            # kill thread 
+            # kill thread
             rc = self.kill_memory_thread()
             if rc is True:
                 return response(data=self.model.db)
@@ -116,7 +116,7 @@ class Status(Sanji):
             self.model.db["diskPush"] = message.data["diskPush"]
             self.model.save_db()
 
-            # kill thread 
+            # kill thread
             rc = self.kill_disk_thread()
             if rc is True:
                 return response(data=self.model.db)
@@ -137,7 +137,7 @@ class Status(Sanji):
 
     def kill_cpu_thread(self):
         try:
-        # kill thread from thread pool
+            # kill thread from thread pool
             logger.debug("kill cpu thread pool:%s" % self.cpu_thread_pool)
             for thread in self.cpu_thread_pool:
                 thread.join()
