@@ -21,6 +21,10 @@
     {
    "methods": ["get", "put"],
    "resource": "/system/status/memory"
+    },
+    {
+   "methods": ["get", "put"],
+   "resource": "/system/status/disk"
     }
   ]
 }

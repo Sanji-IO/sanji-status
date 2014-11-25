@@ -93,20 +93,35 @@ class Status(Sanji):
             return response(code=400, data={"message": "memory status error"})
         return response(code=400, data={"message": "Invaild Input"})
 
-    '''
     @Route(methods="get", resource="/system/status/disk")
     def get_disk(self, message, response):
-        return response(data={"enable": self.model.db["enable"]})
+        if "push" in message.query:
+            if message.query["push"] == "true":
+                self.model.db["diskPush"] = 1
+                self.model.save_db()
+
+                # start thread
+                rc = self.start_disk_thread()
+                if rc is True:
+                    return response(data=self.model.db)
+                else:
+                    return response(code=400,
+                                    data={"message": "server push failed"})
+        # push query is false, return db
+        return response(data=self.model.db)
 
     @Route(methods="put", resource="/system/status/disk")
     def put_disk(self, message, response):
-        if hasattr(message, "data") and "enable" in message.data:
-            self.model.db["enable"] = message.data["enable"]
+        if hasattr(message, "data") and message.data["diskPush"] == 0:
+            self.model.db["diskPush"] = message.data["diskPush"]
             self.model.save_db()
-            self.update_ssh()
-            return response(code=self.rsp["code"], data=self.rsp["data"])
+
+            # kill thread 
+            rc = self.kill_disk_thread()
+            if rc is True:
+                return response(data=self.model.db)
+            return response(code=400, data={"message": "disk status error"})
         return response(code=400, data={"message": "Invaild Input"})
-    '''
 
     def start_cpu_thread(self):
         kill_rc = self.kill_cpu_thread()
@@ -159,6 +174,32 @@ class Status(Sanji):
             logger.debug("kill memory thread error: %s" % e)
             return False
 
+    def start_disk_thread(self):
+        kill_rc = self.kill_disk_thread()
+        if kill_rc is False:
+            return False
+        # start call thread to server push
+        t = DiskThread()
+        t.start()
+        # save to thread pool
+        self.disk_thread_pool.append(t)
+        logger.debug("start_disk_thread thread pool: %s" %
+                     self.disk_thread_pool)
+        return True
+
+    def kill_disk_thread(self):
+        try:
+            logger.debug("kill disk thread pool:%s" %
+                         self.disk_thread_pool)
+            for thread in self.disk_thread_pool:
+                thread.join()
+            # flush thread pool
+            self.disk_thread_pool = []
+            return True
+        except Exception as e:
+            logger.debug("kill memory thread error: %s" % e)
+            return False
+
 
 class ConvertData:
     # convert size
@@ -202,7 +243,7 @@ class CpuThread(threading.Thread, Sanji):
             # self.publish.event("/remote/sanji/events",
             #                   data={"time": ConvertData.get_time(),
             #                         "usage": usage})
-            time.sleep(6)
+            time.sleep(60)
 
     def join(self):
         logger.debug("join thread")
@@ -230,9 +271,8 @@ class MemoryThread(threading.Thread, Sanji):
             logger.debug("memory_data:%s" % memory_data)
             # server push data
             # self.publish.event("/remote/sanji/events",
-            #                   data={"time": ConvertData.get_time(),
-            #                         "usage": usage})
-            time.sleep(3)
+            #                    data=memory_data)
+            time.sleep(60)
 
     def join(self):
         logger.debug("join thread")
@@ -243,14 +283,46 @@ class MemoryThread(threading.Thread, Sanji):
     def get_memory_data(self):
         logger.debug("in get_memory_data")
         mem = psutil.virtual_memory()
-        print("mem available:%s" % mem.total)
-        print("mem available:%s" % ConvertData.human_size(mem.total))
         data = {"time": ConvertData.get_time(),
                 "total": ConvertData.human_size(mem.total),
                 "used": ConvertData.human_size(mem.used),
                 "free": ConvertData.human_size(mem.free),
                 "usedPercentage": round(((float(mem.used)/mem.total)*100),
                                         ndigits=1)}
+        return data
+
+
+class DiskThread(threading.Thread, Sanji):
+
+    def __init__(self):
+        super(DiskThread, self).__init__()
+        self.stoprequest = threading.Event()
+
+    def run(self):
+        while not self.stoprequest.isSet():
+            # get cpu usage
+            disk_data = self.get_disk_data()
+            logger.debug("disk_data:%s" % disk_data)
+            # server push data
+            # self.publish.event("/remote/sanji/events",
+            #                   data=disk_data)
+            time.sleep(60)
+
+    def join(self):
+        logger.debug("join thread")
+        # set event to stop while loop in run
+        self.stoprequest.set()
+        super(DiskThread, self).join()
+
+    def get_disk_data(self):
+        logger.debug("in get_disk_data")
+
+        disk = psutil.disk_usage("/")
+        data = {"time": ConvertData.get_time(),
+                "total": ConvertData.human_size(disk.total),
+                "used": ConvertData.human_size(disk.used),
+                "free": ConvertData.human_size(disk.free),
+                "usedPercentage": disk.percent}
         return data
 
 if __name__ == '__main__':
