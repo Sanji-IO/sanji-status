@@ -39,7 +39,7 @@ class Status(Sanji):
                 self.model.save_db()
 
                 # start thread
-                rc = self.start_cpu_thread()
+                rc = self.start_thread("cpu")
                 if rc is True:
                     return response(data=self.model.db)
                 else:
@@ -56,7 +56,7 @@ class Status(Sanji):
             self.model.save_db()
 
             # kill thread
-            rc = self.kill_cpu_thread()
+            rc = self.kill_thread("cpu")
             if rc is True:
                 return response(data=self.model.db)
             return response(code=400, data={"message": "cpu status error"})
@@ -70,7 +70,7 @@ class Status(Sanji):
                 self.model.save_db()
 
                 # start thread
-                rc = self.start_memory_thread()
+                rc = self.start_thread("memory")
                 if rc is True:
                     return response(data=self.model.db)
                 else:
@@ -87,7 +87,7 @@ class Status(Sanji):
             self.model.save_db()
 
             # kill thread
-            rc = self.kill_memory_thread()
+            rc = self.kill_thread("memory")
             if rc is True:
                 return response(data=self.model.db)
             return response(code=400, data={"message": "memory status error"})
@@ -123,81 +123,58 @@ class Status(Sanji):
             return response(code=400, data={"message": "disk status error"})
         return response(code=400, data={"message": "Invaild Input"})
 
-    def start_cpu_thread(self):
-        kill_rc = self.kill_cpu_thread()
+    def start_thread(self, fun_type):
+        # generate command by fun_type
+        if fun_type == "cpu":
+            kill_cmd = ("self.kill_thread(\"%s\")" % fun_type)
+            thread_cmd = "CpuThread()"
+            pool_cmd = "self.cpu_thread_pool.append(t)"
+        elif fun_type == "memory":
+            kill_cmd = ("self.kill_thread(\"%s\")" % fun_type)
+            thread_cmd = "MemoryThread()"
+            pool_cmd = "self.memory_thread_pool.append(t)"
+        elif fun_type == "disk":
+            kill_cmd = ("self.kill_thread(\"%s\")" % fun_type)
+            thread_cmd = "DiskThread()"
+            pool_cmd = "self.disk_thread_pool.append(t)"
+        else:
+            return False
+
+        kill_rc = eval(kill_cmd)
         if kill_rc is False:
             return False
         # start call thread to server push
-        t = CpuThread()
+        t = eval(thread_cmd)
         t.start()
         # save to thread pool
-        self.cpu_thread_pool.append(t)
-        logger.debug("start_cpu_thread thread pool: %s" % self.cpu_thread_pool)
+        eval(pool_cmd)
+        logger.debug("start_%s_thread thread pool: %s"
+                     % (fun_type, self.cpu_thread_pool))
         return True
 
-    def kill_cpu_thread(self):
+    def kill_thread(self, fun_type):
+        print("----------------> in kill_thread:%s" % fun_type)
+        # define pool_name by fun_type
+        if fun_type == "cpu":
+            pool = self.cpu_thread_pool
+        elif fun_type == "memory":
+            pool = self.memory_thread_pool
+        elif fun_type == "disk":
+            pool = self.disk_thread_pool
+        else:
+            return False
+
         try:
             # kill thread from thread pool
-            logger.debug("kill cpu thread pool:%s" % self.cpu_thread_pool)
-            for thread in self.cpu_thread_pool:
+            logger.debug("kill %s thread pool:%s"
+                         % (fun_type, pool))
+            for thread in pool:
                 thread.join()
             # flush thread pool
-            self.cpu_thread_pool = []
+            pool = []
             return True
         except Exception as e:
             logger.debug("kill cpu thread error: %s" % e)
-            return False
-
-    def start_memory_thread(self):
-        kill_rc = self.kill_memory_thread()
-        if kill_rc is False:
-            return False
-        # start call thread to server push
-        t = MemoryThread()
-        t.start()
-        # save to thread pool
-        self.memory_thread_pool.append(t)
-        logger.debug("start_memory_thread thread pool: %s" %
-                     self.memory_thread_pool)
-        return True
-
-    def kill_memory_thread(self):
-        try:
-            logger.debug("kill memory thread pool:%s" %
-                         self.memory_thread_pool)
-            for thread in self.memory_thread_pool:
-                thread.join()
-            # flush thread pool
-            self.memory_thread_pool = []
-            return True
-        except Exception as e:
-            logger.debug("kill memory thread error: %s" % e)
-            return False
-
-    def start_disk_thread(self):
-        kill_rc = self.kill_disk_thread()
-        if kill_rc is False:
-            return False
-        # start call thread to server push
-        t = DiskThread()
-        t.start()
-        # save to thread pool
-        self.disk_thread_pool.append(t)
-        logger.debug("start_disk_thread thread pool: %s" %
-                     self.disk_thread_pool)
-        return True
-
-    def kill_disk_thread(self):
-        try:
-            logger.debug("kill disk thread pool:%s" %
-                         self.disk_thread_pool)
-            for thread in self.disk_thread_pool:
-                thread.join()
-            # flush thread pool
-            self.disk_thread_pool = []
-            return True
-        except Exception as e:
-            logger.debug("kill memory thread error: %s" % e)
             return False
 
 
