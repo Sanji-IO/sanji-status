@@ -101,7 +101,7 @@ class Status(Sanji):
                 self.model.save_db()
 
                 # start thread
-                rc = self.start_disk_thread()
+                rc = self.start_thread("disk")
                 if rc is True:
                     return response(data=self.model.db)
                 else:
@@ -117,7 +117,7 @@ class Status(Sanji):
             self.model.save_db()
 
             # kill thread
-            rc = self.kill_disk_thread()
+            rc = self.kill_thread("disk")
             if rc is True:
                 return response(data=self.model.db)
             return response(code=400, data={"message": "disk status error"})
@@ -127,15 +127,15 @@ class Status(Sanji):
         # generate command by fun_type
         if fun_type == "cpu":
             kill_cmd = ("self.kill_thread(\"%s\")" % fun_type)
-            thread_cmd = "CpuThread()"
+            thread_cmd = "PushThread(\"cpu\")"
             pool_cmd = "self.cpu_thread_pool.append(t)"
         elif fun_type == "memory":
             kill_cmd = ("self.kill_thread(\"%s\")" % fun_type)
-            thread_cmd = "MemoryThread()"
+            thread_cmd = "PushThread(\"memory\")"
             pool_cmd = "self.memory_thread_pool.append(t)"
         elif fun_type == "disk":
             kill_cmd = ("self.kill_thread(\"%s\")" % fun_type)
-            thread_cmd = "DiskThread()"
+            thread_cmd = "PushThread(\"disk\")"
             pool_cmd = "self.disk_thread_pool.append(t)"
         else:
             return False
@@ -153,7 +153,6 @@ class Status(Sanji):
         return True
 
     def kill_thread(self, fun_type):
-        print("----------------> in kill_thread:%s" % fun_type)
         # define pool_name by fun_type
         if fun_type == "cpu":
             pool = self.cpu_thread_pool
@@ -174,7 +173,7 @@ class Status(Sanji):
             pool = []
             return True
         except Exception as e:
-            logger.debug("kill cpu thread error: %s" % e)
+            logger.debug("kill %s thread error: %s" % (fun_type, e))
             return False
 
 
@@ -205,57 +204,54 @@ class ConvertData:
         return current_time
 
 
-class CpuThread(threading.Thread):
+class PushThread(threading.Thread):
 
-    def __init__(self):
-        super(CpuThread, self).__init__()
+    def __init__(self, fun_type):
+        super(PushThread, self).__init__()
         self.stoprequest = threading.Event()
+        self.type = fun_type
 
     def run(self):
+        cnt = 60
         while not self.stoprequest.isSet():
-            # get cpu usage
-            usage = self.grep_data()
-            logger.debug("cpu usage:%f" % usage)
-            # server push data
-            # self.publish.event("/remote/sanji/events",
-            #                   data={"time": ConvertData.get_time(),
-            #                         "usage": usage})
-            time.sleep(60)
+            if cnt == 60:
+                if self.type == "cpu":
+                    # get cpu usage
+                    usage = self.get_cpu_data()
+                    logger.debug("cpu usage:%f" % usage)
+                    # server push data
+                    # self.publish.event("/remote/sanji/events",
+                    #                   data={"time": ConvertData.get_time(),
+                    #                         "usage": usage})
+                elif self.type == "memory":
+                    # get memory data
+                    memory_data = self.get_memory_data()
+                    logger.debug("memory_data:%s" % memory_data)
+                    # server push data
+                    # self.publish.event("/remote/sanji/events",
+                    #                    data=memory_data)
+                else:
+                    # get disk data
+                    disk_data = self.get_disk_data()
+                    logger.debug("disk_data:%s" % disk_data)
+                    # server push data
+                    # self.publish.event("/remote/sanji/events",
+                    #                   data=disk_data)
+                cnt = 0
+            cnt = cnt + 1
+            time.sleep(1)
 
     def join(self):
         logger.debug("join thread")
         # set event to stop while loop in run
         self.stoprequest.set()
-        super(CpuThread, self).join()
+        super(PushThread, self).join()
 
     # grep cpu data
-    def grep_data(self):
+    def get_cpu_data(self):
         cpu_usage = psutil.cpu_percent(interval=1)
         logger.debug("cpu usage:%f" % cpu_usage)
         return cpu_usage
-
-
-class MemoryThread(threading.Thread):
-
-    def __init__(self):
-        super(MemoryThread, self).__init__()
-        self.stoprequest = threading.Event()
-
-    def run(self):
-        while not self.stoprequest.isSet():
-            # get cpu usage
-            memory_data = self.get_memory_data()
-            logger.debug("memory_data:%s" % memory_data)
-            # server push data
-            # self.publish.event("/remote/sanji/events",
-            #                    data=memory_data)
-            time.sleep(60)
-
-    def join(self):
-        logger.debug("join thread")
-        # set event to stop while loop in run
-        self.stoprequest.set()
-        super(MemoryThread, self).join()
 
     def get_memory_data(self):
         logger.debug("in get_memory_data")
@@ -268,29 +264,6 @@ class MemoryThread(threading.Thread):
                                         ndigits=1)}
         return data
 
-
-class DiskThread(threading.Thread):
-
-    def __init__(self):
-        super(DiskThread, self).__init__()
-        self.stoprequest = threading.Event()
-
-    def run(self):
-        while not self.stoprequest.isSet():
-            # get cpu usage
-            disk_data = self.get_disk_data()
-            logger.debug("disk_data:%s" % disk_data)
-            # server push data
-            # self.publish.event("/remote/sanji/events",
-            #                   data=disk_data)
-            time.sleep(60)
-
-    def join(self):
-        logger.debug("join thread")
-        # set event to stop while loop in run
-        self.stoprequest.set()
-        super(DiskThread, self).join()
-
     def get_disk_data(self):
         logger.debug("in get_disk_data")
 
@@ -301,6 +274,7 @@ class DiskThread(threading.Thread):
                 "free": ConvertData.human_size(disk.free),
                 "usedPercentage": disk.percent}
         return data
+
 
 if __name__ == '__main__':
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
