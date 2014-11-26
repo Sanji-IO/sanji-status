@@ -205,7 +205,7 @@ class ConvertData:
         return current_time
 
 
-class CpuThread(threading.Thread, Sanji):
+class CpuThread(threading.Thread):
 
     def __init__(self):
         super(CpuThread, self).__init__()
@@ -235,7 +235,7 @@ class CpuThread(threading.Thread, Sanji):
         return cpu_usage
 
 
-class MemoryThread(threading.Thread, Sanji):
+class MemoryThread(threading.Thread):
 
     def __init__(self):
         super(MemoryThread, self).__init__()
@@ -269,7 +269,7 @@ class MemoryThread(threading.Thread, Sanji):
         return data
 
 
-class DiskThread(threading.Thread, Sanji):
+class DiskThread(threading.Thread):
 
     def __init__(self):
         super(DiskThread, self).__init__()
