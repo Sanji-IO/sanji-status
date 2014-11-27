@@ -28,8 +28,8 @@ class TestStatusClass(unittest.TestCase):
         self.status.stop()
         self.status = None
 
-    @patch("status.Status.start_cpu_thread")
-    def test_get_cpu(self, start_cpu_thread):
+    @patch("status.Status.start_thread")
+    def test_get_cpu(self, start_thread):
         # case 1: without query string
         message = Message({"data": "test data", "query": {},
                            "param": {"id": "cpu"}})
@@ -43,7 +43,7 @@ class TestStatusClass(unittest.TestCase):
         # case 2: with query string and response code 200
         message = Message({"data": "test data", "query": {"push": "true"},
                            "param": {"id": "cpu"}})
-        start_cpu_thread.return_value = True
+        start_thread.return_value = True
 
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
@@ -52,15 +52,15 @@ class TestStatusClass(unittest.TestCase):
         self.status.get_cpu(message=message, response=resp2, test=True)
 
         # case 3: with query string and response code 400
-        start_cpu_thread.return_value = False
+        start_thread.return_value = False
 
         def resp3(code=200, data=None):
             self.assertEqual(code, 400)
             self.assertEqual(data, {"message": "server push failed"})
         self.status.get_cpu(message=message, response=resp3, test=True)
 
-    @patch("status.Status.kill_cpu_thread")
-    def test_put_cpu(self, kill_cpu_thread):
+    @patch("status.Status.kill_thread")
+    def test_put_cpu(self, kill_thread):
         # case 1: message donsn't has data attribute
         message = Message({})
 
@@ -69,10 +69,10 @@ class TestStatusClass(unittest.TestCase):
             self.assertEqual(data, {"message": "Invaild Input"})
         self.status.put_cpu(message=message, response=resp1, test=True)
 
-        # case 2: kill_cpu_thread = true
+        # case 2: kill_thread = true
         message = Message({"data": {"cpuPush": 0}, "query": {"push": "true"},
                            "param": {"id": "cpu"}})
-        kill_cpu_thread.return_value = True
+        kill_thread.return_value = True
 
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
@@ -80,16 +80,16 @@ class TestStatusClass(unittest.TestCase):
                                     "memoryPush": 0})
         self.status.put_cpu(message=message, response=resp2, test=True)
 
-        # case 3: kill_cpu_thread = false
-        kill_cpu_thread.return_value = False
+        # case 3: kill_thread = false
+        kill_thread.return_value = False
 
         def resp3(code=200, data=None):
             self.assertEqual(code, 400)
             self.assertEqual(data, {"message": "cpu status error"})
         self.status.put_cpu(message=message, response=resp3, test=True)
 
-    @patch("status.Status.start_memory_thread")
-    def test_get_memory(self, start_memory_thread):
+    @patch("status.Status.start_thread")
+    def test_get_memory(self, start_thread):
         # case 1: without query string
         message = Message({"data": "test data", "query": {},
                            "param": {"id": "memory"}})
@@ -103,7 +103,7 @@ class TestStatusClass(unittest.TestCase):
         # case 2: with query string and response code 200
         message = Message({"data": "test data", "query": {"push": "true"},
                            "param": {"id": "memory"}})
-        start_memory_thread.return_value = True
+        start_thread.return_value = True
 
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
@@ -112,15 +112,15 @@ class TestStatusClass(unittest.TestCase):
         self.status.get_memory(message=message, response=resp2, test=True)
 
         # case 3: with query string and response code 400
-        start_memory_thread.return_value = False
+        start_thread.return_value = False
 
         def resp3(code=200, data=None):
             self.assertEqual(code, 400)
             self.assertEqual(data, {"message": "server push failed"})
         self.status.get_memory(message=message, response=resp3, test=True)
 
-    @patch("status.Status.kill_memory_thread")
-    def test_put_memory(self, kill_memory_thread):
+    @patch("status.Status.kill_thread")
+    def test_put_memory(self, kill_thread):
         # case 1: message donsn't has data attribute
         message = Message({})
 
@@ -133,7 +133,7 @@ class TestStatusClass(unittest.TestCase):
         message = Message({"data": {"memoryPush": 0},
                            "query": {"push": "true"},
                            "param": {"id": "memory"}})
-        kill_memory_thread.return_value = True
+        kill_thread.return_value = True
 
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
@@ -142,15 +142,15 @@ class TestStatusClass(unittest.TestCase):
         self.status.put_memory(message=message, response=resp2, test=True)
 
         # case 3: kill_memeory_thread = false
-        kill_memory_thread.return_value = False
+        kill_thread.return_value = False
 
         def resp3(code=200, data=None):
             self.assertEqual(code, 400)
             self.assertEqual(data, {"message": "memory status error"})
         self.status.put_memory(message=message, response=resp3, test=True)
 
-    @patch("status.Status.start_disk_thread")
-    def test_get_disk(self, start_disk_thread):
+    @patch("status.Status.start_thread")
+    def test_get_disk(self, start_thread):
         # case 1: without query string
         message = Message({"data": "test data", "query": {},
                            "param": {"id": "disk"}})
@@ -164,7 +164,7 @@ class TestStatusClass(unittest.TestCase):
         # case 2: with query string and response code 200
         message = Message({"data": "test data", "query": {"push": "true"},
                            "param": {"id": "disk"}})
-        start_disk_thread.return_value = True
+        start_thread.return_value = True
 
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
@@ -173,15 +173,15 @@ class TestStatusClass(unittest.TestCase):
         self.status.get_disk(message=message, response=resp2, test=True)
 
         # case 3: with query string and response code 400
-        start_disk_thread.return_value = False
+        start_thread.return_value = False
 
         def resp3(code=200, data=None):
             self.assertEqual(code, 400)
             self.assertEqual(data, {"message": "server push failed"})
         self.status.get_disk(message=message, response=resp3, test=True)
 
-    @patch("status.Status.kill_disk_thread")
-    def test_put_disk(self, kill_disk_thread):
+    @patch("status.Status.kill_thread")
+    def test_put_disk(self, kill_thread):
         # case 1: message donsn't has data attribute
         message = Message({})
 
@@ -194,7 +194,7 @@ class TestStatusClass(unittest.TestCase):
         message = Message({"data": {"diskPush": 0},
                            "query": {"push": "true"},
                            "param": {"id": "disk"}})
-        kill_disk_thread.return_value = True
+        kill_thread.return_value = True
 
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
@@ -203,23 +203,95 @@ class TestStatusClass(unittest.TestCase):
         self.status.put_disk(message=message, response=resp2, test=True)
 
         # case 3: kill_disk_thread = false
-        kill_disk_thread.return_value = False
+        kill_thread.return_value = False
 
         def resp3(code=200, data=None):
             self.assertEqual(code, 400)
             self.assertEqual(data, {"message": "disk status error"})
         self.status.put_disk(message=message, response=resp3, test=True)
 
-    @patch("status.Status.kill_cpu_thread")
-    def test_start_cpu_thread(self, kill_cpu_thread):
-        # case 1: kill_cpu_thread = false
-        kill_cpu_thread.return_value = False
-        rc = self.status.start_cpu_thread()
+    @patch("status.PushThread")
+    @patch("status.Status.kill_thread")
+    def test_start_thread(self, kill_thread, PushThread):
+        # fun_type = "cpu"
+        # case 1: kill_thread = false
+        kill_thread.return_value = False
+        rc = self.status.start_thread("cpu")
         self.assertEqual(rc, False)
 
-        # case 2: kill_cpu_thread = True
-        # kill_cpu_thread.return_value = False
+        # case 2: kill_thread = True
+        kill_thread.return_value = True
+        rc = self.status.start_thread("cpu")
+        self.assertEqual(rc, True)
+        PushThread.assert_called_once_with("cpu")
 
+        # case 3: fun_type error
+        rc = self.status.start_thread("fail function type")
+        self.assertEqual(rc, False)
+
+        # fun_type = "memory"
+        # case 1: kill_thread = false
+        kill_thread.return_value = False
+        rc = self.status.start_thread("memory")
+        self.assertEqual(rc, False)
+
+        # case 2: kill_thread = True
+        kill_thread.return_value = True
+        rc = self.status.start_thread("memory")
+        self.assertEqual(rc, True)
+
+        # fun_type = "disk"
+        # case 1: kill_thread = false
+        kill_thread.return_value = False
+        rc = self.status.start_thread("disk")
+        self.assertEqual(rc, False)
+
+        # case 2: kill_thread = True
+        kill_thread.return_value = True
+        rc = self.status.start_thread("disk")
+        self.assertEqual(rc, True)
+
+    @patch("status.PushThread")
+    def test_kill_thread(self, PushThread):
+        # fun_type = cpu
+        # case 1
+        t = PushThread("cpu")
+        self.status.cpu_thread_pool.append(t)
+        rc = self.status.kill_thread("cpu")
+        t.join.assert_called_once_with()
+        self.assertEqual(rc, True)
+
+        # fun_type = memory
+        # case 2
+        PushThread.reset_mock()
+        t = PushThread("memory")
+        self.status.memory_thread_pool.append(t)
+        rc = self.status.kill_thread("memory")
+        t.join.assert_called_once_with()
+        self.assertEqual(rc, True)
+
+        # fun_type = disk
+        # case 3
+        PushThread.reset_mock()
+        t = PushThread("disk")
+        self.status.disk_thread_pool.append(t)
+        rc = self.status.kill_thread("disk")
+        t.join.assert_called_once_with()
+        self.assertEqual(rc, True)
+
+        # case 4: error fun_type
+        rc = self.status.kill_thread("error fun_type")
+        self.assertEqual(rc, False)
+
+        # case 5: exception
+        PushThread.reset_mock()
+        self.status.cpu_thread_pool = []
+        t = PushThread("cpu")
+        t.join.side_effect = Exception("error exception!")
+        self.status.cpu_thread_pool.append(t)
+        # PushThread.side_effect = Exception("error exception!")
+        rc = self.status.kill_thread("cpu")
+        self.assertEqual(rc, False)
 
 if __name__ == "__main__":
     unittest.main()
