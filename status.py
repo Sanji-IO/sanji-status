@@ -30,6 +30,7 @@ class Status(Sanji):
         self.cpu_thread_pool = []
         self.memory_thread_pool = []
         self.disk_thread_pool = []
+        self.thread_pool = []
 
     @Route(methods="get", resource="/system/status/cpu")
     def get_cpu(self, message, response):
@@ -124,53 +125,36 @@ class Status(Sanji):
         return response(code=400, data={"message": "Invaild Input"})
 
     def start_thread(self, fun_type):
-        # generate command by fun_type
-        if fun_type == "cpu":
-            kill_cmd = ("self.kill_thread(\"%s\")" % fun_type)
-            thread_cmd = "PushThread(\"cpu\")"
-            pool_cmd = "self.cpu_thread_pool.append(t)"
-        elif fun_type == "memory":
-            kill_cmd = ("self.kill_thread(\"%s\")" % fun_type)
-            thread_cmd = "PushThread(\"memory\")"
-            pool_cmd = "self.memory_thread_pool.append(t)"
-        elif fun_type == "disk":
-            kill_cmd = ("self.kill_thread(\"%s\")" % fun_type)
-            thread_cmd = "PushThread(\"disk\")"
-            pool_cmd = "self.disk_thread_pool.append(t)"
-        else:
+        try:
+            # kill_rc = eval(kill_cmd)
+            kill_rc = self.kill_thread(fun_type)
+            if kill_rc is False:
+                return False
+            # start call thread to server push
+            # t = eval(thread_cmd)
+            t = PushThread(fun_type)
+            t.start()
+            # save to thread pool
+            self.thread_pool.append((fun_type, t))
+            # eval(pool_cmd)
+            logger.debug("start_%s_thread thread pool: %s"
+                         % (fun_type, self.thread_pool))
+            return True
+        except Exception as e:
+            logger.debug("start thread error: %s" % e)
             return False
-
-        kill_rc = eval(kill_cmd)
-        if kill_rc is False:
-            return False
-        # start call thread to server push
-        t = eval(thread_cmd)
-        t.start()
-        # save to thread pool
-        eval(pool_cmd)
-        logger.debug("start_%s_thread thread pool: %s"
-                     % (fun_type, self.cpu_thread_pool))
-        return True
 
     def kill_thread(self, fun_type):
-        # define pool_name by fun_type
-        if fun_type == "cpu":
-            pool = self.cpu_thread_pool
-        elif fun_type == "memory":
-            pool = self.memory_thread_pool
-        elif fun_type == "disk":
-            pool = self.disk_thread_pool
-        else:
-            return False
-
         try:
             # kill thread from thread pool
-            logger.debug("kill %s thread pool:%s"
-                         % (fun_type, pool))
-            for thread in pool:
-                thread.join()
-            # flush thread pool
-            pool = []
+            for idx, value in enumerate(self.thread_pool):
+                # check if thread_id by fun_type
+                if value[0] == fun_type:
+                    logger.debug("kill %s thread id:%s" % (value[0], value[1]))
+                    value[1].join()
+                    # pop thread_id in thread pool
+                    self.thread_pool.pop(idx)
+                    # pool = []
             return True
         except Exception as e:
             logger.debug("kill %s thread error: %s" % (fun_type, e))
@@ -210,8 +194,10 @@ class PushThread(threading.Thread):
         super(PushThread, self).__init__()
         self.stoprequest = threading.Event()
         self.type = fun_type
+        print "in PushThread init"
 
     def run(self):
+        print "in pushthrad run"
         cnt = 60
         while not self.stoprequest.isSet():
             if cnt == 60:
@@ -246,6 +232,7 @@ class PushThread(threading.Thread):
         # set event to stop while loop in run
         self.stoprequest.set()
         super(PushThread, self).join()
+        logger.debug("join finished")
 
     # grep cpu data
     def get_cpu_data(self):
@@ -256,6 +243,7 @@ class PushThread(threading.Thread):
     def get_memory_data(self):
         logger.debug("in get_memory_data")
         mem = psutil.virtual_memory()
+        print("memdata:%s" % mem)
         data = {"time": ConvertData.get_time(),
                 "total": ConvertData.human_size(mem.total),
                 "used": ConvertData.human_size(mem.used),
