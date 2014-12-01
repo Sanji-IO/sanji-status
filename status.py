@@ -6,10 +6,14 @@ import os
 import threading
 import time
 import psutil
+import subprocess
+import socket
 from sanji.core import Sanji
 from sanji.core import Route
 from sanji.model_initiator import ModelInitiator
 from sanji.connection.mqtt import Mqtt
+from threading import Thread
+from datetime import timedelta
 
 logger = logging.getLogger()
 
@@ -124,6 +128,26 @@ class Status(Sanji):
             return response(code=400, data={"message": "disk status error"})
         return response(code=400, data={"message": "Invaild Input"})
 
+    @Route(methods="get", resource="/system/status/showdata")
+    def get_system_data(self, message, response):
+        # Tcall SystemStatus class to get data
+        return response(data=SystemData().showdata())
+
+    @Route(methods="put", resource="/system/status/showdata")
+    def put_system_data(self, message, response):
+        if hasattr(message, "data"):
+            self.model.db["hostname"] = message.data["hostname"]
+            self.model.save_db()
+            # setup hostname
+            rc = SystemData.set_hostname(message.data["hostname"])
+            if rc is True:
+                return response(data=self.model.db)
+            else:
+                return response(code=400, data={"message":
+                                                "Set hostname error"})
+
+        return response(code=400, data={"message": "Invaild Input"})
+
     def start_thread(self, fun_type):
         try:
             # kill_rc = eval(kill_cmd)
@@ -194,7 +218,6 @@ class PushThread(threading.Thread):
         super(PushThread, self).__init__()
         self.stoprequest = threading.Event()
         self.type = fun_type
-        print "in PushThread init"
 
     def run(self):
         print "in pushthrad run"
@@ -243,7 +266,6 @@ class PushThread(threading.Thread):
     def get_memory_data(self):
         logger.debug("in get_memory_data")
         mem = psutil.virtual_memory()
-        print("memdata:%s" % mem)
         data = {"time": ConvertData.get_time(),
                 "total": ConvertData.human_size(mem.total),
                 "used": ConvertData.human_size(mem.used),
@@ -262,6 +284,64 @@ class PushThread(threading.Thread):
                 "free": ConvertData.human_size(disk.free),
                 "usedPercentage": disk.percent}
         return data
+
+
+class SystemData:
+
+    def __init__(self, *args, **kwargs):
+        self.attribute = dict()
+        self.threads = list()
+        for item in ["firmware", "hostname", "storage", "uptime"]:
+            def run(item):
+                self.attribute[item] = getattr(SystemData, "get_" + item)()
+
+            thread = Thread(target=run, args=[item])
+            self.threads.append(thread)
+
+        map((lambda thread: thread.start()), self.threads)
+        map((lambda thread: thread.join()), self.threads)
+
+    @staticmethod
+    def get_firmware():
+        cmd = "kversion -a"
+        try:
+            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            out = process.communicate()[0]
+        except Exception as e:
+            logger.debug("get firmware version error: %s" % e)
+            return "N/A"
+        return out
+
+    @staticmethod
+    def get_hostname():
+        return socket.gethostname()
+
+    @staticmethod
+    def get_storage():
+        disk = psutil.disk_usage("/")
+        return ConvertData.human_size(disk.free)
+
+    @staticmethod
+    def get_uptime(format=True):
+        uptime_string = None
+        with open('/proc/uptime', 'r') as f:
+            uptime_seconds = float(f.readline().split()[0])
+
+        if format is False:
+            return uptime_seconds
+        else:
+            uptime_string = str(timedelta(seconds=uptime_seconds))
+
+        return uptime_string[:uptime_string.find('.')]
+
+    @staticmethod
+    def set_hostname(name):
+        rc = subprocess.call("hostname -b %s" % name, shell=True)
+        return True if rc == 0 else False
+
+    def showdata(self):
+        return self.attribute
 
 
 if __name__ == '__main__':

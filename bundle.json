@@ -25,6 +25,10 @@
     {
    "methods": ["get", "put"],
    "resource": "/system/status/disk"
+    },
+    {
+   "methods": ["get", "put"],
+   "resource": "/system/status/showdata"
     }
   ]
 }
