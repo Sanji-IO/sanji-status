@@ -3,10 +3,11 @@ import sys
 import unittest
 import logging
 import time
-
 from sanji.connection.mockup import Mockup
 from sanji.message import Message
 from mock import patch
+from mock import Mock
+from mock import mock_open
 
 logger = logging.getLogger()
 
@@ -15,6 +16,7 @@ try:
     from status import Status
     from status import ConvertData
     from status import PushThread
+    from status import SystemData
     from myobject import Myobject
 except ImportError as e:
     print e
@@ -41,7 +43,7 @@ class TestStatusClass(unittest.TestCase):
         def resp1(code=200, data=None):
             self.assertEqual(code, 200)
             self.assertEqual(data, {"cpuPush": 0, "diskPush": 0,
-                                    "memoryPush": 0})
+                                    "memoryPush": 0, "hostname": "Moxa"})
         self.status.get_cpu(message=message, response=resp1, test=True)
 
         # case 2: with query string and response code 200
@@ -52,7 +54,7 @@ class TestStatusClass(unittest.TestCase):
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
             self.assertEqual(data, {"cpuPush": 1, "diskPush": 0,
-                                    "memoryPush": 0})
+                                    "memoryPush": 0, "hostname": "Moxa"})
         self.status.get_cpu(message=message, response=resp2, test=True)
 
         # case 3: with query string and response code 400
@@ -81,7 +83,7 @@ class TestStatusClass(unittest.TestCase):
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
             self.assertEqual(data, {"cpuPush": 0, "diskPush": 0,
-                                    "memoryPush": 0})
+                                    "memoryPush": 0, "hostname": "Moxa"})
         self.status.put_cpu(message=message, response=resp2, test=True)
 
         # case 3: kill_thread = false
@@ -101,7 +103,7 @@ class TestStatusClass(unittest.TestCase):
         def resp1(code=200, data=None):
             self.assertEqual(code, 200)
             self.assertEqual(data, {"cpuPush": 0, "diskPush": 0,
-                                    "memoryPush": 0})
+                                    "memoryPush": 0, "hostname": "Moxa"})
         self.status.get_memory(message=message, response=resp1, test=True)
 
         # case 2: with query string and response code 200
@@ -112,7 +114,7 @@ class TestStatusClass(unittest.TestCase):
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
             self.assertEqual(data, {"cpuPush": 0, "diskPush": 0,
-                                    "memoryPush": 1})
+                                    "memoryPush": 1, "hostname": "Moxa"})
         self.status.get_memory(message=message, response=resp2, test=True)
 
         # case 3: with query string and response code 400
@@ -142,7 +144,7 @@ class TestStatusClass(unittest.TestCase):
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
             self.assertEqual(data, {"cpuPush": 0, "diskPush": 0,
-                                    "memoryPush": 0})
+                                    "memoryPush": 0, "hostname": "Moxa"})
         self.status.put_memory(message=message, response=resp2, test=True)
 
         # case 3: kill_memeory_thread = false
@@ -162,7 +164,7 @@ class TestStatusClass(unittest.TestCase):
         def resp1(code=200, data=None):
             self.assertEqual(code, 200)
             self.assertEqual(data, {"cpuPush": 0, "diskPush": 0,
-                                    "memoryPush": 0})
+                                    "memoryPush": 0, "hostname": "Moxa"})
         self.status.get_disk(message=message, response=resp1, test=True)
 
         # case 2: with query string and response code 200
@@ -173,7 +175,7 @@ class TestStatusClass(unittest.TestCase):
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
             self.assertEqual(data, {"cpuPush": 0, "diskPush": 1,
-                                    "memoryPush": 0})
+                                    "memoryPush": 0, "hostname": "Moxa"})
         self.status.get_disk(message=message, response=resp2, test=True)
 
         # case 3: with query string and response code 400
@@ -203,7 +205,7 @@ class TestStatusClass(unittest.TestCase):
         def resp2(code=200, data=None):
             self.assertEqual(code, 200)
             self.assertEqual(data, {"cpuPush": 0, "diskPush": 0,
-                                    "memoryPush": 0})
+                                    "memoryPush": 0, "hostname": "Moxa"})
         self.status.put_disk(message=message, response=resp2, test=True)
 
         # case 3: kill_disk_thread = false
@@ -213,6 +215,47 @@ class TestStatusClass(unittest.TestCase):
             self.assertEqual(code, 400)
             self.assertEqual(data, {"message": "disk status error"})
         self.status.put_disk(message=message, response=resp3, test=True)
+
+    @patch("status.SystemData.showdata")
+    def test_get_system_data(self, showdata):
+        message = Message({})
+
+        def resp1(code=200, data=None):
+            showdata.return_value = {"firmware": "MXcloud",
+                                     "hostname": "Moxa", "storage": "50.0 GB",
+                                     "uptime": "1 days, 23:22:21"}
+            showdata.assert_called_once_with()
+        self.status.get_system_data(message=message, response=resp1, test=True)
+
+    @patch("status.SystemData.set_hostname")
+    def test_put_system_data(self, set_hostname):
+        message = Message({})
+
+        # case1: invalid input
+        def resp1(code=200, data=None):
+            self.assertEqual(code, 400)
+            self.assertEqual(data, {"message": "Invaild Input"})
+        self.status.put_system_data(message=message, response=resp1, test=True)
+
+        # case2: set hostname success
+        message = Message({"data": {"hostname": "Moxa"},
+                           "query": {},
+                           "param": {"id": "showdata"}})
+        set_hostname.return_value = True
+
+        def resp2(code=200, data=None):
+            self.assertEqual(code, 200)
+            self.assertEqual(data, {"cpuPush": 0, "diskPush": 0,
+                                    "memoryPush": 0, "hostname": "Moxa"})
+        self.status.put_system_data(message=message, response=resp2, test=True)
+
+        # case3: set hostname failed
+        set_hostname.return_value = False
+
+        def resp3(code=200, data=None):
+            self.assertEqual(code, 400)
+            self.assertEqual(data, {"message": "Set hostname error"})
+        self.status.put_system_data(message=message, response=resp3, test=True)
 
     @patch("status.PushThread")
     @patch("status.Status.kill_thread")
@@ -408,6 +451,54 @@ class TestPushThreadClass(unittest.TestCase):
         time.sleep(0.1)
         self.disk_thread1.join()
         self.disk_thread1 = None
+
+
+class TestSystemDataClass(unittest.TestCase):
+
+    @patch("status.subprocess.Popen")
+    def test_get_firmware(self, Popen):
+        process_mock = Mock()
+        # case 1: Popen success
+        attrs = {"communicate.return_value": ("MoxaCloud", "error")}
+        process_mock.configure_mock(**attrs)
+        Popen.return_value = process_mock
+        rc = SystemData.get_firmware()
+        self.assertEqual(rc, "MoxaCloud")
+
+        # case 2: Popen success
+        Popen.side_effect = Exception("error exception!")
+        SystemData.get_firmware()
+
+    @patch("status.socket.gethostname")
+    def test_get_hostname(self, gethostname):
+        gethostname.return_value = "Moxa"
+        rc = SystemData.get_hostname()
+        self.assertEqual(rc, "Moxa")
+
+    @patch("psutil.disk_usage")
+    def test_get_storage(self, disk_data):
+        disk_data.return_value = Myobject()
+        rc = SystemData.get_storage()
+        self.assertEqual(rc, "1 KB")
+
+    def test_get_uptime(self):
+        m = mock_open(read_data="1644143.1 6520752.96")
+        m().readline.return_value = "1644143.1 6520752.96"
+        with patch("status.open", m, create=True):
+            rc = SystemData.get_uptime()
+            self.assertEqual(rc, "19 days, 0:42:23")
+
+    @patch("status.subprocess.call")
+    def test_set_hostname(self, call):
+        # case 1: set hostname success
+        call.return_value = 0
+        rc = SystemData.set_hostname("new_host")
+        self.assertEqual(rc, True)
+
+        # case 2: set hostname failed
+        call.return_value = 1
+        rc = SystemData.set_hostname("new_host")
+        self.assertEqual(rc, False)
 
 if __name__ == "__main__":
     unittest.main()

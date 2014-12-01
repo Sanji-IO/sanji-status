@@ -135,18 +135,17 @@ class Status(Sanji):
 
     @Route(methods="put", resource="/system/status/showdata")
     def put_system_data(self, message, response):
-        if hasattr(message, "data"):
-            self.model.db["hostname"] = message.data["hostname"]
-            self.model.save_db()
-            # setup hostname
-            rc = SystemData.set_hostname(message.data["hostname"])
-            if rc is True:
-                return response(data=self.model.db)
-            else:
-                return response(code=400, data={"message":
-                                                "Set hostname error"})
-
-        return response(code=400, data={"message": "Invaild Input"})
+        if not(hasattr(message, "data")):
+            return response(code=400, data={"message": "Invaild Input"})
+        self.model.db["hostname"] = message.data["hostname"]
+        self.model.save_db()
+        # setup hostname
+        rc = SystemData.set_hostname(message.data["hostname"])
+        if rc is True:
+            return response(data=self.model.db)
+        else:
+            return response(code=400, data={"message":
+                                            "Set hostname error"})
 
     def start_thread(self, fun_type):
         try:
@@ -327,13 +326,8 @@ class SystemData:
         uptime_string = None
         with open('/proc/uptime', 'r') as f:
             uptime_seconds = float(f.readline().split()[0])
-
-        if format is False:
-            return uptime_seconds
-        else:
             uptime_string = str(timedelta(seconds=uptime_seconds))
-
-        return uptime_string[:uptime_string.find('.')]
+            return uptime_string[:uptime_string.find('.')]
 
     @staticmethod
     def set_hostname(name):
