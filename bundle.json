@@ -15,15 +15,15 @@
   "ttl": 10,
   "resources": [
     {
-   "methods": ["get", "put"],
+   "methods": ["get"],
    "resource": "/system/status/cpu"
     },
     {
-   "methods": ["get", "put"],
+   "methods": ["get"],
    "resource": "/system/status/memory"
     },
     {
-   "methods": ["get", "put"],
+   "methods": ["get"],
    "resource": "/system/status/disk"
     },
     {
