@@ -8,12 +8,22 @@ import time
 import psutil
 import subprocess
 import socket
+
 from sanji.core import Sanji
 from sanji.core import Route
 from sanji.model_initiator import ModelInitiator
 from sanji.connection.mqtt import Mqtt
+
 from threading import Thread
 from datetime import timedelta
+
+from sqlalchemy import asc
+from sqlalchemy import func
+from sqlalchemy import create_engine
+from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from mxc.flock import Flock
 
 logger = logging.getLogger()
 
@@ -24,109 +34,68 @@ class Status(Sanji):
         path_root = os.path.abspath(os.path.dirname(__file__))
         self.model = ModelInitiator("status", path_root, backup_interval=1)
 
-        # reset flag
-        self.model.db["cpuPush"] = 0
-        self.model.db["memoryPush"] = 0
-        self.model.db["diskPush"] = 0
-        self.model.save_db()
-
         # init thread pool
-        self.cpu_thread_pool = []
-        self.memory_thread_pool = []
-        self.disk_thread_pool = []
         self.thread_pool = []
+
+        # TODO: start a thread to get status
+        rc = self.start_thread()
+        print "start_thread rc: %s" % rc
 
     @Route(methods="get", resource="/system/status/cpu")
     def get_cpu(self, message, response):
-        if "push" in message.query:
-            if message.query["push"] == "true":
-                self.model.db["cpuPush"] = 1
-                self.model.save_db()
+        print "in get cpu callback!!!"
+        # if "push" in message.query:
+        #     if message.query["push"] == "true":
+        #         self.model.db["cpuPush"] = 1
+        #         self.model.save_db()
 
-                # start thread
-                rc = self.start_thread("cpu")
-                if rc is True:
-                    return response(data=self.model.db)
-                else:
-                    return response(code=400,
-                                    data={"message": "server push failed"})
+        #         # start thread
+        #         rc = self.start_thread("cpu")
+        #         if rc is True:
+        #             return response(data=self.model.db)
+        #         else:
+        #             return response(code=400,
+        #                             data={"message": "server push failed"})
 
-        # push query is false, return db
-        return response(data=self.model.db)
-
-    @Route(methods="put", resource="/system/status/cpu")
-    def put_cpu(self, message, response):
-        if hasattr(message, "data") and message.data["cpuPush"] == 0:
-            self.model.db["cpuPush"] = message.data["cpuPush"]
-            self.model.save_db()
-
-            # kill thread
-            rc = self.kill_thread("cpu")
-            if rc is True:
-                return response(data=self.model.db)
-            return response(code=400, data={"message": "cpu status error"})
-        return response(code=400, data={"message": "Invaild Input"})
+        # # push query is false, return db
+        # return response(data=self.model.db)
 
     @Route(methods="get", resource="/system/status/memory")
     def get_memory(self, message, response):
-        if "push" in message.query:
-            if message.query["push"] == "true":
-                self.model.db["memoryPush"] = 1
-                self.model.save_db()
+        print "in get memory callback!!!"
+        # if "push" in message.query:
+        #     if message.query["push"] == "true":
+        #         self.model.db["memoryPush"] = 1
+        #         self.model.save_db()
 
-                # start thread
-                rc = self.start_thread("memory")
-                if rc is True:
-                    return response(data=self.model.db)
-                else:
-                    return response(code=400,
-                                    data={"message": "server push failed"})
+        #         # start thread
+        #         rc = self.start_thread("memory")
+        #         if rc is True:
+        #             return response(data=self.model.db)
+        #         else:
+        #             return response(code=400,
+        #                             data={"message": "server push failed"})
 
         # push query is false, return db
-        return response(data=self.model.db)
-
-    @Route(methods="put", resource="/system/status/memory")
-    def put_memory(self, message, response):
-        if hasattr(message, "data") and message.data["memoryPush"] == 0:
-            self.model.db["memoryPush"] = message.data["memoryPush"]
-            self.model.save_db()
-
-            # kill thread
-            rc = self.kill_thread("memory")
-            if rc is True:
-                return response(data=self.model.db)
-            return response(code=400, data={"message": "memory status error"})
-        return response(code=400, data={"message": "Invaild Input"})
+        # return response(data=self.model.db)
 
     @Route(methods="get", resource="/system/status/disk")
     def get_disk(self, message, response):
-        if "push" in message.query:
-            if message.query["push"] == "true":
-                self.model.db["diskPush"] = 1
-                self.model.save_db()
+        print "in get disk callback!!!"
+        # if "push" in message.query:
+        #     if message.query["push"] == "true":
+        #         self.model.db["diskPush"] = 1
+        #         self.model.save_db()
 
-                # start thread
-                rc = self.start_thread("disk")
-                if rc is True:
-                    return response(data=self.model.db)
-                else:
-                    return response(code=400,
-                                    data={"message": "server push failed"})
-        # push query is false, return db
-        return response(data=self.model.db)
-
-    @Route(methods="put", resource="/system/status/disk")
-    def put_disk(self, message, response):
-        if hasattr(message, "data") and message.data["diskPush"] == 0:
-            self.model.db["diskPush"] = message.data["diskPush"]
-            self.model.save_db()
-
-            # kill thread
-            rc = self.kill_thread("disk")
-            if rc is True:
-                return response(data=self.model.db)
-            return response(code=400, data={"message": "disk status error"})
-        return response(code=400, data={"message": "Invaild Input"})
+        #         # start thread
+        #         rc = self.start_thread("disk")
+        #         if rc is True:
+        #             return response(data=self.model.db)
+        #         else:
+        #             return response(code=400,
+        #                             data={"message": "server push failed"})
+        # # push query is false, return db
+        # return response(data=self.model.db)
 
     @Route(methods="get", resource="/system/status/showdata")
     def get_system_data(self, message, response):
@@ -147,40 +116,37 @@ class Status(Sanji):
             return response(code=400, data={"message":
                                             "Set hostname error"})
 
-    def start_thread(self, fun_type):
+    def start_thread(self):
         try:
-            # kill_rc = eval(kill_cmd)
-            kill_rc = self.kill_thread(fun_type)
+            kill_rc = self.kill_thread()
             if kill_rc is False:
                 return False
-            # start call thread to server push
-            # t = eval(thread_cmd)
-            t = PushThread(fun_type)
+
+            # start thread to grep status
+            t = GrepThread()
             t.start()
+
             # save to thread pool
-            self.thread_pool.append((fun_type, t))
-            # eval(pool_cmd)
-            logger.debug("start_%s_thread thread pool: %s"
-                         % (fun_type, self.thread_pool))
+            self.thread_pool.append((t))
+            logger.debug("start thread pool: %s" % self.thread_pool)
             return True
+
         except Exception as e:
             logger.debug("start thread error: %s" % e)
             return False
 
-    def kill_thread(self, fun_type):
+    def kill_thread(self):
         try:
             # kill thread from thread pool
             for idx, value in enumerate(self.thread_pool):
-                # check if thread_id by fun_type
-                if value[0] == fun_type:
-                    logger.debug("kill %s thread id:%s" % (value[0], value[1]))
-                    value[1].join()
-                    # pop thread_id in thread pool
-                    self.thread_pool.pop(idx)
-                    # pool = []
+                logger.debug("kill %s thread id:%s" % (value[0], value[1]))
+                value[1].join()
+
+                # pop thread_id in thread pool
+                self.thread_pool.pop(idx)
             return True
         except Exception as e:
-            logger.debug("kill %s thread error: %s" % (fun_type, e))
+            logger.debug("kill thread error: %s" % e)
             return False
 
 
@@ -211,59 +177,191 @@ class ConvertData:
         return current_time
 
 
-class PushThread(threading.Thread):
+class DataBase:
+    """
+    # TODO: write a class to save data to db
+    """
+    Base = declarative_base()
 
-    def __init__(self, fun_type):
-        super(PushThread, self).__init__()
+    # define cpu status table
+    class CpuStatus(Base):
+        __tablename__ = "cpu"
+
+        id = Column(Integer, primary_key=True)
+        time = Column(String, nullable=False)
+        usage = Column(Float, nullable=False)
+        time_stamp = Column(Float, nullable=False)
+
+        def __init__(self, intime, usage):
+            self.time = intime
+            self.usage = usage
+            self.time_stamp = time.time()
+
+    # define memory status table
+    class MemoryStatus(Base):
+        __tablename__ = "memory"
+
+        id = Column(Integer, primary_key=True)
+        time = Column(String, nullable=False)
+        usedPercentage = Column(Integer, nullable=False)
+        total = Column(String, nullable=False)
+        free = Column(String, nullable=False)
+        used = Column(String, nullable=False)
+        time_stamp = Column(Float, nullable=False)
+
+        def __init__(self, intime, usedPercentage, total, free, used):
+            self.time = intime
+            self.usedPercentage = usedPercentage
+            self.total = total
+            self.free = free
+            self.used = used
+            self.time_stamp = time.time()
+
+    # difine disk usage status table
+
+    def __init__(self, db_path):
+
+        create_db_flag = 0
+        # check db file exist or not, if not, create a new file
+        if not os.path.isfile(db_path):
+            open(db_path, "a").close()
+            create_db_flag = 1
+            print("open new file")
+
+        # prepare instance
+        self._engine = create_engine("sqlite:///" + db_path)
+
+        # prepare lock
+        self._lock = Flock(db_path + ".lock")
+
+        # prepare session for communicate with db
+        self._session = sessionmaker(bind=self._engine)()
+
+        # create db
+        if create_db_flag == 1:
+            self._create_db()
+
+    def _create_db(self):
+        with self._lock:
+            logger.debug("create db")
+
+            # delete all tables
+            DataBase.Base.metadata.drop_all(self._engine)
+
+            # create tables
+            DataBase.Base.metadata.create_all(self._engine)
+
+    def insert_table(self, table_type, data):
+        with self._lock:
+            if table_type == "cpu":
+                self._session.add(DataBase.CpuStatus(
+                    intime=data["time"],
+                    usage=data["usage"]
+                ))
+            elif table_type == "memory":
+                self._session.add(DataBase.MemoryStatus(
+                    intime=data["time"],
+                    usedPercentage=data["usedPercentage"],
+                    total=data["total"],
+                    free=data["free"],
+                    used=data["used"]
+                ))
+
+            self._session.commit()
+
+    def delete_table(self, table_type):
+        with self._lock:
+            if table_type == "cpu":
+                del_obj = self._session.query(DataBase.CpuStatus).order_by(asc(
+                    DataBase.CpuStatus.id))[0]
+
+                # delete data by del_obj.id
+                self._session.query(DataBase.CpuStatus).filter_by(
+                    id=(del_obj.id)).delete()
+
+    def check_table_count(self, table_name):
+        """
+        check table count is equal to max_table_cnt or not,
+        if equal, return True, else return false
+        """
+        MAX_TABLE_CNT = 3
+
+        # get_table_count
+        with self._lock:
+            if table_name == "cpu":
+                cpu_cnt = self._session.query(
+                    func.count(DataBase.CpuStatus.id)
+                    ).one()[0]
+
+                if cpu_cnt >= MAX_TABLE_CNT:
+                    return True
+                return False
+
+            elif table_name == "memory":
+                memory_cnt = self._session.query(
+                    func.count(DataBase.MemoryStatus.id)
+                    ).one()[0]
+
+                if memory_cnt >= MAX_TABLE_CNT:
+                    return True
+                return False
+
+
+class GrepThread(threading.Thread):
+# TODO: modify this class to routine to get status info, and save to db
+    db_path = "./status_db"
+
+    def __init__(self):
+        super(GrepThread, self).__init__()
         self.stoprequest = threading.Event()
-        self.type = fun_type
+
+        # initialize db
+        self._database = DataBase(GrepThread.db_path)
 
     def run(self):
-        print "in pushthrad run"
-        cnt = 60
+        logger.debug("run GrepThread")
+        grep_interval = 5
+        cnt = 5
         while not self.stoprequest.isSet():
-            if cnt == 60:
-                if self.type == "cpu":
-                    # get cpu usage
-                    usage = self.get_cpu_data()
-                    logger.debug("cpu usage:%f" % usage)
-                    # server push data
-                    # self.publish.event("/remote/sanji/events",
-                    #                   data={"time": ConvertData.get_time(),
-                    #                         "usage": usage})
-                elif self.type == "memory":
-                    # get memory data
-                    memory_data = self.get_memory_data()
-                    logger.debug("memory_data:%s" % memory_data)
-                    # server push data
-                    # self.publish.event("/remote/sanji/events",
-                    #                    data=memory_data)
-                else:
-                    # get disk data
-                    disk_data = self.get_disk_data()
-                    logger.debug("disk_data:%s" % disk_data)
-                    # server push data
-                    # self.publish.event("/remote/sanji/events",
-                    #                   data=disk_data)
+            if cnt == grep_interval:
+
+                cpu_data = self.get_cpu_data()
+                logger.debug("cpu_data:%s" % cpu_data)
+                print time.time()
+
+                # TODO: check db count is equal to max count or not
+                if self._database.check_table_count("cpu"):
+                    print "delete old data!!!!"
+                    self._database.delete_table("cpu")
+
+                self._database.insert_table("cpu", cpu_data)
+
+                memory_data = self.get_memory_data()
+                logger.debug("memory_data:%s" % memory_data)
+
+                self._database.insert_table("memory", memory_data)
+
+                disk_data = self.get_disk_data()
+                logger.debug("disk_data:%s" % disk_data)
+
                 cnt = 0
             cnt = cnt + 1
             time.sleep(1)
 
     def join(self):
-        logger.debug("join thread")
+        logger.debug("join GrepThread")
+
         # set event to stop while loop in run
         self.stoprequest.set()
-        super(PushThread, self).join()
+        super(GrepThread, self).join()
         logger.debug("join finished")
 
-    # grep cpu data
     def get_cpu_data(self):
-        cpu_usage = psutil.cpu_percent(interval=1)
-        logger.debug("cpu usage:%f" % cpu_usage)
-        return cpu_usage
+        data = {"time": ConvertData.get_time(),
+                "usage": psutil.cpu_percent(interval=1)}
+        return data
 
     def get_memory_data(self):
-        logger.debug("in get_memory_data")
         mem = psutil.virtual_memory()
         data = {"time": ConvertData.get_time(),
                 "total": ConvertData.human_size(mem.total),
@@ -274,8 +372,6 @@ class PushThread(threading.Thread):
         return data
 
     def get_disk_data(self):
-        logger.debug("in get_disk_data")
-
         disk = psutil.disk_usage("/")
         data = {"time": ConvertData.get_time(),
                 "total": ConvertData.human_size(disk.total),
