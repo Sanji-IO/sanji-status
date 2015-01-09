@@ -27,8 +27,15 @@ from mxc.flock import Flock
 
 logger = logging.getLogger()
 
+DB_PATH = "./status_db"
+
+# prepare lock
+global_lock = Flock(DB_PATH + ".lock")
+
 
 class Status(Sanji):
+
+    MAX_RETURN_CNT = 5
 
     def init(self, *args, **kwargs):
         path_root = os.path.abspath(os.path.dirname(__file__))
@@ -37,28 +44,23 @@ class Status(Sanji):
         # init thread pool
         self.thread_pool = []
 
-        # TODO: start a thread to get status
-        rc = self.start_thread()
-        print "start_thread rc: %s" % rc
+        # start a thread to get status
+        self.start_thread()
+
+        # initialize db
+        self._database = DataBase()
 
     @Route(methods="get", resource="/system/status/cpu")
     def get_cpu(self, message, response):
         print "in get cpu callback!!!"
-        # if "push" in message.query:
-        #     if message.query["push"] == "true":
-        #         self.model.db["cpuPush"] = 1
-        #         self.model.save_db()
 
-        #         # start thread
-        #         rc = self.start_thread("cpu")
-        #         if rc is True:
-        #             return response(data=self.model.db)
-        #         else:
-        #             return response(code=400,
-        #                             data={"message": "server push failed"})
+        cpu_cnt = self._database.get_table_count("cpu")
 
-        # # push query is false, return db
-        # return response(data=self.model.db)
+        data_obj = self._database.get_table_data("cpu")
+
+        return_data = self.parse_return_data(data_obj, cpu_cnt)
+
+        return response(data=return_data)
 
     @Route(methods="get", resource="/system/status/memory")
     def get_memory(self, message, response):
@@ -149,6 +151,26 @@ class Status(Sanji):
             logger.debug("kill thread error: %s" % e)
             return False
 
+    def parse_return_data(self, data_obj, data_cnt):
+        data = []
+        print data_cnt
+        # fetch newest MAX_RETURN_CNT data
+        if data_cnt >= Status.MAX_RETURN_CNT:
+            for item in data_obj[(
+                    data_cnt-Status.MAX_RETURN_CNT):(data_cnt)]:
+
+                data.append({
+                    "time": item.time,
+                    "value": item.usage
+                })
+        else:
+            for item in data_obj:
+                data.append({
+                    "time": item.time,
+                    "value": item.usage
+                })
+        return data
+
 
 class ConvertData:
     # convert size
@@ -178,9 +200,7 @@ class ConvertData:
 
 
 class DataBase:
-    """
-    # TODO: write a class to save data to db
-    """
+
     Base = declarative_base()
 
     # define cpu status table
@@ -219,20 +239,21 @@ class DataBase:
 
     # difine disk usage status table
 
-    def __init__(self, db_path):
+    def __init__(self):
 
         create_db_flag = 0
+
         # check db file exist or not, if not, create a new file
-        if not os.path.isfile(db_path):
-            open(db_path, "a").close()
+        if not os.path.isfile(DB_PATH):
+            open(DB_PATH, "a").close()
             create_db_flag = 1
             print("open new file")
 
         # prepare instance
-        self._engine = create_engine("sqlite:///" + db_path)
+        self._engine = create_engine("sqlite:///" + DB_PATH)
 
-        # prepare lock
-        self._lock = Flock(db_path + ".lock")
+        # # prepare lock
+        # self._lock = Flock(db_path + ".lock")
 
         # prepare session for communicate with db
         self._session = sessionmaker(bind=self._engine)()
@@ -242,7 +263,7 @@ class DataBase:
             self._create_db()
 
     def _create_db(self):
-        with self._lock:
+        with global_lock:
             logger.debug("create db")
 
             # delete all tables
@@ -252,7 +273,7 @@ class DataBase:
             DataBase.Base.metadata.create_all(self._engine)
 
     def insert_table(self, table_type, data):
-        with self._lock:
+        with global_lock:
             if table_type == "cpu":
                 self._session.add(DataBase.CpuStatus(
                     intime=data["time"],
@@ -270,7 +291,7 @@ class DataBase:
             self._session.commit()
 
     def delete_table(self, table_type):
-        with self._lock:
+        with global_lock:
             if table_type == "cpu":
                 del_obj = self._session.query(DataBase.CpuStatus).order_by(asc(
                     DataBase.CpuStatus.id))[0]
@@ -279,15 +300,33 @@ class DataBase:
                 self._session.query(DataBase.CpuStatus).filter_by(
                     id=(del_obj.id)).delete()
 
+    def get_table_data(self, table_name):
+        with global_lock:
+            if table_name == "cpu":
+                return self._session.query(DataBase.CpuStatus).all()
+            elif table_name == "memory":
+                return self._session.query(DataBase.CpuStatus).all()
+
+    def get_table_count(self, table_name):
+        with global_lock:
+            if table_name == "cpu":
+                return self._session.query(
+                    func.count(DataBase.CpuStatus.id)
+                    ).one()[0]
+            elif table_name == "memeory":
+                return self._session.query(
+                    func.count(DataBase.MemoryStatus.id)
+                    ).one()[0]
+
     def check_table_count(self, table_name):
         """
         check table count is equal to max_table_cnt or not,
         if equal, return True, else return false
         """
-        MAX_TABLE_CNT = 3
+        MAX_TABLE_CNT = 10
 
         # get_table_count
-        with self._lock:
+        with global_lock:
             if table_name == "cpu":
                 cpu_cnt = self._session.query(
                     func.count(DataBase.CpuStatus.id)
@@ -308,15 +347,16 @@ class DataBase:
 
 
 class GrepThread(threading.Thread):
-# TODO: modify this class to routine to get status info, and save to db
-    db_path = "./status_db"
+
+    # routine to get status info, and save to db
+    # db_path = "./status_db"
 
     def __init__(self):
         super(GrepThread, self).__init__()
         self.stoprequest = threading.Event()
 
         # initialize db
-        self._database = DataBase(GrepThread.db_path)
+        self._database = DataBase()
 
     def run(self):
         logger.debug("run GrepThread")
