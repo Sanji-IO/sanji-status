@@ -6,8 +6,8 @@ import time
 from sanji.connection.mockup import Mockup
 from sanji.message import Message
 from mock import patch
-from mock import Mock
-from mock import mock_open
+# from mock import Mock
+# from mock import mock_open
 
 logger = logging.getLogger()
 
@@ -15,9 +15,9 @@ try:
     sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
     from status import Status
     from status import ConvertData
-    from status import PushThread
-    from status import SystemData
-    from myobject import Myobject
+    # from status import GrepThread
+    # from status import SystemData
+    # from myobject import Myobject
 except ImportError as e:
     print e
     print "Please check the python PATH for import test module. (%s)" \
@@ -65,35 +65,6 @@ class TestStatusClass(unittest.TestCase):
             self.assertEqual(data, {"message": "server push failed"})
         self.status.get_cpu(message=message, response=resp3, test=True)
 
-    @patch("status.Status.kill_thread")
-    def test_put_cpu(self, kill_thread):
-        # case 1: message donsn't has data attribute
-        message = Message({})
-
-        def resp1(code=200, data=None):
-            self.assertEqual(code, 400)
-            self.assertEqual(data, {"message": "Invaild Input"})
-        self.status.put_cpu(message=message, response=resp1, test=True)
-
-        # case 2: kill_thread = true
-        message = Message({"data": {"cpuPush": 0}, "query": {"push": "true"},
-                           "param": {"id": "cpu"}})
-        kill_thread.return_value = True
-
-        def resp2(code=200, data=None):
-            self.assertEqual(code, 200)
-            self.assertEqual(data, {"cpuPush": 0, "diskPush": 0,
-                                    "memoryPush": 0, "hostname": "Moxa"})
-        self.status.put_cpu(message=message, response=resp2, test=True)
-
-        # case 3: kill_thread = false
-        kill_thread.return_value = False
-
-        def resp3(code=200, data=None):
-            self.assertEqual(code, 400)
-            self.assertEqual(data, {"message": "cpu status error"})
-        self.status.put_cpu(message=message, response=resp3, test=True)
-
     @patch("status.Status.start_thread")
     def test_get_memory(self, start_thread):
         # case 1: without query string
@@ -125,36 +96,6 @@ class TestStatusClass(unittest.TestCase):
             self.assertEqual(data, {"message": "server push failed"})
         self.status.get_memory(message=message, response=resp3, test=True)
 
-    @patch("status.Status.kill_thread")
-    def test_put_memory(self, kill_thread):
-        # case 1: message donsn't has data attribute
-        message = Message({})
-
-        def resp1(code=200, data=None):
-            self.assertEqual(code, 400)
-            self.assertEqual(data, {"message": "Invaild Input"})
-        self.status.put_memory(message=message, response=resp1, test=True)
-
-        # case 2: kill_memory_thread = true
-        message = Message({"data": {"memoryPush": 0},
-                           "query": {"push": "true"},
-                           "param": {"id": "memory"}})
-        kill_thread.return_value = True
-
-        def resp2(code=200, data=None):
-            self.assertEqual(code, 200)
-            self.assertEqual(data, {"cpuPush": 0, "diskPush": 0,
-                                    "memoryPush": 0, "hostname": "Moxa"})
-        self.status.put_memory(message=message, response=resp2, test=True)
-
-        # case 3: kill_memeory_thread = false
-        kill_thread.return_value = False
-
-        def resp3(code=200, data=None):
-            self.assertEqual(code, 400)
-            self.assertEqual(data, {"message": "memory status error"})
-        self.status.put_memory(message=message, response=resp3, test=True)
-
     @patch("status.Status.start_thread")
     def test_get_disk(self, start_thread):
         # case 1: without query string
@@ -185,36 +126,6 @@ class TestStatusClass(unittest.TestCase):
             self.assertEqual(code, 400)
             self.assertEqual(data, {"message": "server push failed"})
         self.status.get_disk(message=message, response=resp3, test=True)
-
-    @patch("status.Status.kill_thread")
-    def test_put_disk(self, kill_thread):
-        # case 1: message donsn't has data attribute
-        message = Message({})
-
-        def resp1(code=200, data=None):
-            self.assertEqual(code, 400)
-            self.assertEqual(data, {"message": "Invaild Input"})
-        self.status.put_disk(message=message, response=resp1, test=True)
-
-        # case 2: kill_disk_thread = true
-        message = Message({"data": {"diskPush": 0},
-                           "query": {"push": "true"},
-                           "param": {"id": "disk"}})
-        kill_thread.return_value = True
-
-        def resp2(code=200, data=None):
-            self.assertEqual(code, 200)
-            self.assertEqual(data, {"cpuPush": 0, "diskPush": 0,
-                                    "memoryPush": 0, "hostname": "Moxa"})
-        self.status.put_disk(message=message, response=resp2, test=True)
-
-        # case 3: kill_disk_thread = false
-        kill_thread.return_value = False
-
-        def resp3(code=200, data=None):
-            self.assertEqual(code, 400)
-            self.assertEqual(data, {"message": "disk status error"})
-        self.status.put_disk(message=message, response=resp3, test=True)
 
     @patch("status.SystemData.showdata")
     def test_get_system_data(self, showdata):
@@ -257,90 +168,90 @@ class TestStatusClass(unittest.TestCase):
             self.assertEqual(data, {"message": "Set hostname error"})
         self.status.put_system_data(message=message, response=resp3, test=True)
 
-    @patch("status.PushThread")
+    @patch("status.GrepThread")
     @patch("status.Status.kill_thread")
-    def test_start_thread(self, kill_thread, PushThread):
+    def test_start_thread(self, kill_thread, GrepThread):
         # fun_type = "cpu"
         # case 1: kill_thread = false
         kill_thread.return_value = False
-        rc = self.status.start_thread("cpu")
+        rc = self.status.start_thread()
         self.assertEqual(rc, False)
 
         # case 2: kill_thread = True
         kill_thread.return_value = True
-        rc = self.status.start_thread("cpu")
+        rc = self.status.start_thread()
         self.assertEqual(rc, True)
-        PushThread.assert_called_once_with("cpu")
+        GrepThread.assert_called_once_with()
 
         # fun_type = "memory"
         # case 1: kill_thread = false
         kill_thread.return_value = False
-        rc = self.status.start_thread("memory")
+        rc = self.status.start_thread()
         self.assertEqual(rc, False)
 
         # case 2: kill_thread = True
-        PushThread.reset_mock()
+        GrepThread.reset_mock()
         kill_thread.return_value = True
-        rc = self.status.start_thread("memory")
+        rc = self.status.start_thread()
         self.assertEqual(rc, True)
-        PushThread.assert_called_once_with("memory")
+        GrepThread.assert_called_once_with()
 
         # fun_type = "disk"
         # case 1: kill_thread = false
         kill_thread.return_value = False
-        rc = self.status.start_thread("disk")
+        rc = self.status.start_thread()
         self.assertEqual(rc, False)
 
         # case 2: kill_thread = True
-        PushThread.reset_mock()
+        GrepThread.reset_mock()
         kill_thread.return_value = True
-        rc = self.status.start_thread("disk")
+        rc = self.status.start_thread()
         self.assertEqual(rc, True)
-        PushThread.assert_called_once_with("disk")
+        GrepThread.assert_called_once_with()
 
         # exception
-        PushThread.reset_mock()
-        t = PushThread("cpu")
+        GrepThread.reset_mock()
+        t = GrepThread()
         t.start.side_effect = Exception("error exception!")
-        rc = self.status.start_thread("cpu")
+        rc = self.status.start_thread()
         self.assertEqual(rc, False)
 
-    @patch("status.PushThread")
-    def test_kill_thread(self, PushThread):
+    @patch("status.GrepThread")
+    def test_kill_thread(self, GrepThread):
         # fun_type = cpu
         # case 1
-        t = PushThread("cpu")
-        self.status.thread_pool.append(("cpu", t))
-        rc = self.status.kill_thread("cpu")
+        t = GrepThread()
+        self.status.thread_pool.append((t))
+        rc = self.status.kill_thread()
         t.join.assert_called_once_with()
         self.assertEqual(rc, True)
 
         # fun_type = memory
         # case 2
-        PushThread.reset_mock()
-        t = PushThread("memory")
-        self.status.thread_pool.append(("memory", t))
-        rc = self.status.kill_thread("memory")
+        GrepThread.reset_mock()
+        t = GrepThread()
+        self.status.thread_pool.append((t))
+        rc = self.status.kill_thread()
         t.join.assert_called_once_with()
         self.assertEqual(rc, True)
 
         # fun_type = disk
         # case 3
-        PushThread.reset_mock()
-        t = PushThread("disk")
+        GrepThread.reset_mock()
+        t = GrepThread("disk")
         self.status.thread_pool.append(("disk", t))
-        rc = self.status.kill_thread("disk")
+        rc = self.status.kill_thread()
         t.join.assert_called_once_with()
         self.assertEqual(rc, True)
 
         # case 4: exception
-        PushThread.reset_mock()
+        GrepThread.reset_mock()
         self.status.thread_pool = []
-        t = PushThread("cpu")
+        t = GrepThread("cpu")
         t.join.side_effect = Exception("error exception!")
         self.status.thread_pool.append(("cpu", t))
-        # PushThread.side_effect = Exception("error exception!")
-        rc = self.status.kill_thread("cpu")
+        # GrepThread.side_effect = Exception("error exception!")
+        rc = self.status.kill_thread()
         self.assertEqual(rc, False)
 
 
@@ -365,140 +276,140 @@ class TestConverDataClass(unittest.TestCase):
                                        time.localtime(time.time())), rc)
 
 
-class TestPushThreadClass(unittest.TestCase):
+# class TestGrepThreadClass(unittest.TestCase):
 
-    @patch.object(PushThread, "get_cpu_data")
-    def test_cpu_run(self, get_cpu_data):
-        self.cpu_thread = PushThread("cpu")
-        get_cpu_data.return_value = 55.6
-        self.cpu_thread.start()
-        time.sleep(0.2)
-        get_cpu_data.assert_called_once_with()
-        time.sleep(0.2)
-        self.cpu_thread.join()
-        self.cpu_thread = None
+#     @patch.object(GrepThread, "get_cpu_data")
+#     def test_cpu_run(self, get_cpu_data):
+#         self.cpu_thread = GrepThread("cpu")
+#         get_cpu_data.return_value = 55.6
+#         self.cpu_thread.start()
+#         time.sleep(0.2)
+#         get_cpu_data.assert_called_once_with()
+#         time.sleep(0.2)
+#         self.cpu_thread.join()
+#         self.cpu_thread = None
 
-    @patch.object(PushThread, "get_memory_data")
-    def test_memory_run(self, get_memory_data):
-        self.memory_thread = PushThread("memory")
-        get_memory_data.return_value = {"total": "2G",
-                                        "used": "1.36G",
-                                        "free": "0.64G"}
-        self.memory_thread.start()
-        time.sleep(0.1)
-        get_memory_data.assert_called_once_with()
-        time.sleep(0.1)
-        self.memory_thread.join()
-        self.memory_thread = None
+#     @patch.object(GrepThread, "get_memory_data")
+#     def test_memory_run(self, get_memory_data):
+#         self.memory_thread = GrepThread("memory")
+#         get_memory_data.return_value = {"total": "2G",
+#                                         "used": "1.36G",
+#                                         "free": "0.64G"}
+#         self.memory_thread.start()
+#         time.sleep(0.1)
+#         get_memory_data.assert_called_once_with()
+#         time.sleep(0.1)
+#         self.memory_thread.join()
+#         self.memory_thread = None
 
-    @patch.object(PushThread, "get_disk_data")
-    def test_disk_run(self, get_disk_data):
-        self.disk_thread = PushThread("disk")
-        get_disk_data.return_value = {"total": "20G",
-                                      "used": "13.6G",
-                                      "free": "6.4G"}
-        self.disk_thread.start()
-        time.sleep(0.1)
-        get_disk_data.assert_called_once_with()
-        time.sleep(0.1)
-        self.disk_thread.join()
-        self.disk_thread = None
+#     @patch.object(GrepThread, "get_disk_data")
+#     def test_disk_run(self, get_disk_data):
+#         self.disk_thread = GrepThread("disk")
+#         get_disk_data.return_value = {"total": "20G",
+#                                       "used": "13.6G",
+#                                       "free": "6.4G"}
+#         self.disk_thread.start()
+#         time.sleep(0.1)
+#         get_disk_data.assert_called_once_with()
+#         time.sleep(0.1)
+#         self.disk_thread.join()
+#         self.disk_thread = None
 
-    @patch("psutil.cpu_percent")
-    def test_get_cpu_data(self, cpu_percent):
-        self.cpu_thread1 = PushThread("cpu")
-        cpu_percent.return_value = 55.6
-        self.cpu_thread1.start()
-        time.sleep(0.1)
-        rc = self.cpu_thread1.get_cpu_data()
-        self.assertEqual(rc, cpu_percent.return_value)
-        time.sleep(0.1)
-        self.cpu_thread1.join()
-        self.cpu_thread1 = None
+#     @patch("psutil.cpu_percent")
+#     def test_get_cpu_data(self, cpu_percent):
+#         self.cpu_thread1 = GrepThread("cpu")
+#         cpu_percent.return_value = 55.6
+#         self.cpu_thread1.start()
+#         time.sleep(0.1)
+#         rc = self.cpu_thread1.get_cpu_data()
+#         self.assertEqual(rc, cpu_percent.return_value)
+#         time.sleep(0.1)
+#         self.cpu_thread1.join()
+#         self.cpu_thread1 = None
 
-    @patch("status.ConvertData.get_time")
-    @patch("psutil.virtual_memory")
-    def test_get_memory_data(self, mem_data, mock_time):
-        self.memory_thread1 = PushThread("memory")
-        mem_data.return_value = Myobject()
-        mock_time.return_value = "2014/11/28 10:11:18"
-        self.memory_thread1.start()
-        time.sleep(0.1)
-        rc = self.memory_thread1.get_memory_data()
-        self.assertEqual(rc, {"time": "2014/11/28 10:11:18",
-                              "total": "2 KB",
-                              "used": "1 KB",
-                              "free": "1 KB",
-                              "usedPercentage": 50.0})
-        time.sleep(0.1)
-        self.memory_thread1.join()
-        self.memory_thread1 = None
+#     @patch("status.ConvertData.get_time")
+#     @patch("psutil.virtual_memory")
+#     def test_get_memory_data(self, mem_data, mock_time):
+#         self.memory_thread1 = GrepThread("memory")
+#         mem_data.return_value = Myobject()
+#         mock_time.return_value = "2014/11/28 10:11:18"
+#         self.memory_thread1.start()
+#         time.sleep(0.1)
+#         rc = self.memory_thread1.get_memory_data()
+#         self.assertEqual(rc, {"time": "2014/11/28 10:11:18",
+#                               "total": "2 KB",
+#                               "used": "1 KB",
+#                               "free": "1 KB",
+#                               "usedPercentage": 50.0})
+#         time.sleep(0.1)
+#         self.memory_thread1.join()
+#         self.memory_thread1 = None
 
-    @patch("status.ConvertData.get_time")
-    @patch("psutil.disk_usage")
-    def test_get_disk_data(self, disk_data, mock_time):
-        self.disk_thread1 = PushThread("disk")
-        disk_data.return_value = Myobject()
-        mock_time.return_value = "2014/11/28 10:11:18"
-        self.disk_thread1.start()
-        time.sleep(0.1)
-        rc = self.disk_thread1.get_disk_data()
-        self.assertEqual(rc, {"time": "2014/11/28 10:11:18",
-                              "total": "2 KB",
-                              "used": "1 KB",
-                              "free": "1 KB",
-                              "usedPercentage": 50.0})
-        time.sleep(0.1)
-        self.disk_thread1.join()
-        self.disk_thread1 = None
+#     @patch("status.ConvertData.get_time")
+#     @patch("psutil.disk_usage")
+#     def test_get_disk_data(self, disk_data, mock_time):
+#         self.disk_thread1 = GrepThread("disk")
+#         disk_data.return_value = Myobject()
+#         mock_time.return_value = "2014/11/28 10:11:18"
+#         self.disk_thread1.start()
+#         time.sleep(0.1)
+#         rc = self.disk_thread1.get_disk_data()
+#         self.assertEqual(rc, {"time": "2014/11/28 10:11:18",
+#                               "total": "2 KB",
+#                               "used": "1 KB",
+#                               "free": "1 KB",
+#                               "usedPercentage": 50.0})
+#         time.sleep(0.1)
+#         self.disk_thread1.join()
+#         self.disk_thread1 = None
 
 
-class TestSystemDataClass(unittest.TestCase):
+# class TestSystemDataClass(unittest.TestCase):
 
-    @patch("status.subprocess.Popen")
-    def test_get_firmware(self, Popen):
-        process_mock = Mock()
-        # case 1: Popen success
-        attrs = {"communicate.return_value": ("MoxaCloud", "error")}
-        process_mock.configure_mock(**attrs)
-        Popen.return_value = process_mock
-        rc = SystemData.get_firmware()
-        self.assertEqual(rc, "MoxaCloud")
+#     @patch("status.subprocess.Popen")
+#     def test_get_firmware(self, Popen):
+#         process_mock = Mock()
+#         # case 1: Popen success
+#         attrs = {"communicate.return_value": ("MoxaCloud", "error")}
+#         process_mock.configure_mock(**attrs)
+#         Popen.return_value = process_mock
+#         rc = SystemData.get_firmware()
+#         self.assertEqual(rc, "MoxaCloud")
 
-        # case 2: Popen success
-        Popen.side_effect = Exception("error exception!")
-        SystemData.get_firmware()
+#         # case 2: Popen success
+#         Popen.side_effect = Exception("error exception!")
+#         SystemData.get_firmware()
 
-    @patch("status.socket.gethostname")
-    def test_get_hostname(self, gethostname):
-        gethostname.return_value = "Moxa"
-        rc = SystemData.get_hostname()
-        self.assertEqual(rc, "Moxa")
+#     @patch("status.socket.gethostname")
+#     def test_get_hostname(self, gethostname):
+#         gethostname.return_value = "Moxa"
+#         rc = SystemData.get_hostname()
+#         self.assertEqual(rc, "Moxa")
 
-    @patch("psutil.disk_usage")
-    def test_get_storage(self, disk_data):
-        disk_data.return_value = Myobject()
-        rc = SystemData.get_storage()
-        self.assertEqual(rc, "1 KB")
+#     @patch("psutil.disk_usage")
+#     def test_get_storage(self, disk_data):
+#         disk_data.return_value = Myobject()
+#         rc = SystemData.get_storage()
+#         self.assertEqual(rc, "1 KB")
 
-    def test_get_uptime(self):
-        m = mock_open(read_data="1644143.1 6520752.96")
-        m().readline.return_value = "1644143.1 6520752.96"
-        with patch("status.open", m, create=True):
-            rc = SystemData.get_uptime()
-            self.assertEqual(rc, "19 days, 0:42:23")
+#     def test_get_uptime(self):
+#         m = mock_open(read_data="1644143.1 6520752.96")
+#         m().readline.return_value = "1644143.1 6520752.96"
+#         with patch("status.open", m, create=True):
+#             rc = SystemData.get_uptime()
+#             self.assertEqual(rc, "19 days, 0:42:23")
 
-    @patch("status.subprocess.call")
-    def test_set_hostname(self, call):
-        # case 1: set hostname success
-        call.return_value = 0
-        rc = SystemData.set_hostname("new_host")
-        self.assertEqual(rc, True)
+#     @patch("status.subprocess.call")
+#     def test_set_hostname(self, call):
+#         # case 1: set hostname success
+#         call.return_value = 0
+#         rc = SystemData.set_hostname("new_host")
+#         self.assertEqual(rc, True)
 
-        # case 2: set hostname failed
-        call.return_value = 1
-        rc = SystemData.set_hostname("new_host")
-        self.assertEqual(rc, False)
+#         # case 2: set hostname failed
+#         call.return_value = 1
+#         rc = SystemData.set_hostname("new_host")
+#         self.assertEqual(rc, False)
 
 if __name__ == "__main__":
     unittest.main()
