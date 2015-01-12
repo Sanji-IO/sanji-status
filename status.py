@@ -35,7 +35,9 @@ global_lock = Flock(DB_PATH + ".lock")
 
 class Status(Sanji):
 
-    MAX_RETURN_CNT = 5
+    MAX_RETURN_CNT = 10
+    RETRY_TIMES = 5
+    RETRY_INTERVAL = 5
 
     def init(self, *args, **kwargs):
         path_root = os.path.abspath(os.path.dirname(__file__))
@@ -47,57 +49,84 @@ class Status(Sanji):
         # start a thread to get status
         self.start_thread()
 
-        # initialize db
-        self._database = DataBase()
-
     @Route(methods="get", resource="/system/status/cpu")
     def get_cpu(self, message, response):
-        print "in get cpu callback!!!"
+        """
+        get MAX_RETURN_CNT cpu data from cpu table and then response
+        """
 
-        cpu_cnt = self._database.get_table_count("cpu")
+        cpu_database = DataBase()
+        retry_cnt = 0
+        while retry_cnt < Status.RETRY_TIMES:
+            try:
+                cpu_cnt = cpu_database.get_table_count("cpu")
+                data_obj = cpu_database.get_table_data("cpu")
+                return_data = self.parse_cpu_return_data(data_obj, cpu_cnt)
 
-        data_obj = self._database.get_table_data("cpu")
+                # close session to avoid new instance exception
+                cpu_database._session.close()
+                return response(data=return_data)
+            except Exception as e:
+                logger.warning("get_cpu exception %s" % e)
+                retry_cnt = retry_cnt + 1
+                time.sleep(Status.RETRY_INTERVAL)
 
-        return_data = self.parse_return_data(data_obj, cpu_cnt)
-
-        return response(data=return_data)
+        return response(code=400, data={"message":
+                                        "get_cpu retry failed"})
 
     @Route(methods="get", resource="/system/status/memory")
     def get_memory(self, message, response):
-        print "in get memory callback!!!"
-        # if "push" in message.query:
-        #     if message.query["push"] == "true":
-        #         self.model.db["memoryPush"] = 1
-        #         self.model.save_db()
+        """
+        get MAX_RETURN_CNT memory data from memory table and then response
+        """
 
-        #         # start thread
-        #         rc = self.start_thread("memory")
-        #         if rc is True:
-        #             return response(data=self.model.db)
-        #         else:
-        #             return response(code=400,
-        #                             data={"message": "server push failed"})
+        memory_database = DataBase()
+        retry_cnt = 0
 
-        # push query is false, return db
-        # return response(data=self.model.db)
+        while retry_cnt < Status.RETRY_TIMES:
+            try:
+                memory_cnt = memory_database.get_table_count("memory")
+                data_obj = memory_database.get_table_data("memory")
+                return_data = self.parse_memory_return_data(
+                    data_obj,
+                    memory_cnt)
+
+                # close session to avoid new instance exception
+                memory_database._session.close()
+                return response(data=return_data)
+            except Exception as e:
+                logger.warning("get_memory exception: %s" % e)
+                retry_cnt = retry_cnt + 1
+                time.sleep(Status.RETRY_INTERVAL)
+
+        return response(code=400, data={"message":
+                                        "get_memory retry failed"})
 
     @Route(methods="get", resource="/system/status/disk")
     def get_disk(self, message, response):
-        print "in get disk callback!!!"
-        # if "push" in message.query:
-        #     if message.query["push"] == "true":
-        #         self.model.db["diskPush"] = 1
-        #         self.model.save_db()
+        """
+        get MAX_RETURN_CNT disk data from disk table and then response
+        """
 
-        #         # start thread
-        #         rc = self.start_thread("disk")
-        #         if rc is True:
-        #             return response(data=self.model.db)
-        #         else:
-        #             return response(code=400,
-        #                             data={"message": "server push failed"})
-        # # push query is false, return db
-        # return response(data=self.model.db)
+        disk_database = DataBase()
+        retry_cnt = 0
+
+        while retry_cnt < Status.RETRY_TIMES:
+            try:
+                disk_cnt = disk_database.get_table_count("disk")
+                data_obj = disk_database.get_table_data("disk")
+                return_data = self.parse_disk_return_data(data_obj, disk_cnt)
+
+                # close session to avoid new instance exception
+                disk_database._session.close()
+                return response(data=return_data)
+            except Exception as e:
+                logger.warning("get disk exception: %s" % e)
+                retry_cnt = retry_cnt + 1
+                time.sleep(Status.RETRY_INTERVAL)
+
+        return response(code=400, data={"message":
+                                        "get_disk retry failed"})
 
     @Route(methods="get", resource="/system/status/showdata")
     def get_system_data(self, message, response):
@@ -151,9 +180,9 @@ class Status(Sanji):
             logger.debug("kill thread error: %s" % e)
             return False
 
-    def parse_return_data(self, data_obj, data_cnt):
+    def parse_cpu_return_data(self, data_obj, data_cnt):
         data = []
-        print data_cnt
+
         # fetch newest MAX_RETURN_CNT data
         if data_cnt >= Status.MAX_RETURN_CNT:
             for item in data_obj[(
@@ -168,6 +197,58 @@ class Status(Sanji):
                 data.append({
                     "time": item.time,
                     "value": item.usage
+                })
+        return data
+
+    def parse_memory_return_data(self, data_obj, data_cnt):
+        data = []
+
+        # fetch newest MAX_RETURN_CNT data
+        if data_cnt >= Status.MAX_RETURN_CNT:
+            for item in data_obj[(
+                    data_cnt-Status.MAX_RETURN_CNT):(data_cnt)]:
+
+                data.append({
+                    "time": item.time,
+                    "total": item.total,
+                    "used": item.used,
+                    "free": item.free,
+                    "usedPercentage": item.usedPercentage
+                })
+        else:
+            for item in data_obj:
+                data.append({
+                    "time": item.time,
+                    "total": item.total,
+                    "used": item.used,
+                    "free": item.free,
+                    "usedPercentage": item.usedPercentage
+                })
+        return data
+
+    def parse_disk_return_data(self, data_obj, data_cnt):
+        data = []
+
+        # fetch newest MAX_RETURN_CNT data
+        if data_cnt >= Status.MAX_RETURN_CNT:
+            for item in data_obj[(
+                    data_cnt-Status.MAX_RETURN_CNT):(data_cnt)]:
+
+                data.append({
+                    "time": item.time,
+                    "total": item.total,
+                    "used": item.used,
+                    "free": item.free,
+                    "usedPercentage": item.usedPercentage
+                })
+        else:
+            for item in data_obj:
+                data.append({
+                    "time": item.time,
+                    "total": item.total,
+                    "used": item.used,
+                    "free": item.free,
+                    "usedPercentage": item.usedPercentage
                 })
         return data
 
@@ -238,6 +319,24 @@ class DataBase:
             self.time_stamp = time.time()
 
     # difine disk usage status table
+    class DiskStatus(Base):
+        __tablename__ = "disk"
+
+        id = Column(Integer, primary_key=True)
+        time = Column(String, nullable=False)
+        usedPercentage = Column(Integer, nullable=False)
+        total = Column(String, nullable=False)
+        free = Column(String, nullable=False)
+        used = Column(String, nullable=False)
+        time_stamp = Column(Float, nullable=False)
+
+        def __init__(self, intime, usedPercentage, total, free, used):
+            self.time = intime
+            self.usedPercentage = usedPercentage
+            self.total = total
+            self.free = free
+            self.used = used
+            self.time_stamp = time.time()
 
     def __init__(self):
 
@@ -247,13 +346,10 @@ class DataBase:
         if not os.path.isfile(DB_PATH):
             open(DB_PATH, "a").close()
             create_db_flag = 1
-            print("open new file")
+            logger.debug("open db file")
 
         # prepare instance
         self._engine = create_engine("sqlite:///" + DB_PATH)
-
-        # # prepare lock
-        # self._lock = Flock(db_path + ".lock")
 
         # prepare session for communicate with db
         self._session = sessionmaker(bind=self._engine)()
@@ -287,6 +383,16 @@ class DataBase:
                     free=data["free"],
                     used=data["used"]
                 ))
+            elif table_type == "disk":
+                self._session.add(DataBase.DiskStatus(
+                    intime=data["time"],
+                    usedPercentage=data["usedPercentage"],
+                    total=data["total"],
+                    free=data["free"],
+                    used=data["used"]
+                ))
+            else:
+                logger.warning("insert_table table_type error")
 
             self._session.commit()
 
@@ -299,13 +405,31 @@ class DataBase:
                 # delete data by del_obj.id
                 self._session.query(DataBase.CpuStatus).filter_by(
                     id=(del_obj.id)).delete()
+            elif table_type == "memory":
+                del_obj = self._session.query(DataBase.MemoryStatus).order_by(
+                    asc(DataBase.MemoryStatus.id))[0]
+
+                # delete data by del_obj.id
+                self._session.query(DataBase.MemoryStatus).filter_by(
+                    id=(del_obj.id)).delete()
+            elif table_type == "disk":
+                del_obj = self._session.query(DataBase.DiskStatus).order_by(
+                    asc(DataBase.DiskStatus.id))[0]
+
+                # delete data by del_obj.id
+                self._session.query(DataBase.DiskStatus).filter_by(
+                    id=(del_obj.id)).delete()
+            else:
+                logger.warning("delete table table_type error")
 
     def get_table_data(self, table_name):
         with global_lock:
             if table_name == "cpu":
                 return self._session.query(DataBase.CpuStatus).all()
             elif table_name == "memory":
-                return self._session.query(DataBase.CpuStatus).all()
+                return self._session.query(DataBase.MemoryStatus).all()
+            elif table_name == "disk":
+                return self._session.query(DataBase.DiskStatus).all()
 
     def get_table_count(self, table_name):
         with global_lock:
@@ -313,9 +437,13 @@ class DataBase:
                 return self._session.query(
                     func.count(DataBase.CpuStatus.id)
                     ).one()[0]
-            elif table_name == "memeory":
+            elif table_name == "memory":
                 return self._session.query(
                     func.count(DataBase.MemoryStatus.id)
+                    ).one()[0]
+            elif table_name == "disk":
+                return self._session.query(
+                    func.count(DataBase.DiskStatus.id)
                     ).one()[0]
 
     def check_table_count(self, table_name):
@@ -323,14 +451,15 @@ class DataBase:
         check table count is equal to max_table_cnt or not,
         if equal, return True, else return false
         """
-        MAX_TABLE_CNT = 10
 
-        # get_table_count
+        MAX_TABLE_CNT = 5000
+
         with global_lock:
             if table_name == "cpu":
                 cpu_cnt = self._session.query(
                     func.count(DataBase.CpuStatus.id)
                     ).one()[0]
+                print "cpu_cnt: %d" % cpu_cnt
 
                 if cpu_cnt >= MAX_TABLE_CNT:
                     return True
@@ -340,16 +469,25 @@ class DataBase:
                 memory_cnt = self._session.query(
                     func.count(DataBase.MemoryStatus.id)
                     ).one()[0]
+                print "memory_cnt: %d" % memory_cnt
 
                 if memory_cnt >= MAX_TABLE_CNT:
                     return True
                 return False
 
+            elif table_name == "disk":
+                disk_cnt = self._session.query(
+                    func.count(DataBase.DiskStatus.id)
+                    ).one()[0]
+                print "disk_cnt: %d" % disk_cnt
+
+                if disk_cnt >= MAX_TABLE_CNT:
+                    return True
+                return False
+
 
 class GrepThread(threading.Thread):
-
     # routine to get status info, and save to db
-    # db_path = "./status_db"
 
     def __init__(self):
         super(GrepThread, self).__init__()
@@ -360,18 +498,20 @@ class GrepThread(threading.Thread):
 
     def run(self):
         logger.debug("run GrepThread")
-        grep_interval = 5
-        cnt = 5
+        grep_interval = 20
+        cnt = 20
         while not self.stoprequest.isSet():
             if cnt == grep_interval:
 
                 cpu_data = self.get_cpu_data()
                 logger.debug("cpu_data:%s" % cpu_data)
-                print time.time()
 
-                # TODO: check db count is equal to max count or not
+                """
+                check db count is equal to max count or not,
+                if equal, delete old data
+                """
+
                 if self._database.check_table_count("cpu"):
-                    print "delete old data!!!!"
                     self._database.delete_table("cpu")
 
                 self._database.insert_table("cpu", cpu_data)
@@ -379,10 +519,18 @@ class GrepThread(threading.Thread):
                 memory_data = self.get_memory_data()
                 logger.debug("memory_data:%s" % memory_data)
 
+                if self._database.check_table_count("memory"):
+                    self._database.delete_table("memory")
+
                 self._database.insert_table("memory", memory_data)
 
                 disk_data = self.get_disk_data()
                 logger.debug("disk_data:%s" % disk_data)
+
+                if self._database.check_table_count("disk"):
+                    self._database.delete_table("disk")
+
+                self._database.insert_table("disk", disk_data)
 
                 cnt = 0
             cnt = cnt + 1
