@@ -170,8 +170,8 @@ class Status(Sanji):
         try:
             # kill thread from thread pool
             for idx, value in enumerate(self.thread_pool):
-                logger.debug("kill %s thread id:%s" % (value[0], value[1]))
-                value[1].join()
+                logger.debug("kill thread id:%s" % value[0])
+                value[0].join()
 
                 # pop thread_id in thread pool
                 self.thread_pool.pop(idx)
