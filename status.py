@@ -170,8 +170,8 @@ class Status(Sanji):
         try:
             # kill thread from thread pool
             for idx, value in enumerate(self.thread_pool):
-                logger.debug("kill thread id:%s" % value[0])
-                value[0].join()
+                logger.debug("kill thread id:%s" % value)
+                value.join()
 
                 # pop thread_id in thread pool
                 self.thread_pool.pop(idx)
@@ -184,6 +184,7 @@ class Status(Sanji):
         data = []
 
         # fetch newest MAX_RETURN_CNT data
+
         if data_cnt >= Status.MAX_RETURN_CNT:
             for item in data_obj[(
                     data_cnt-Status.MAX_RETURN_CNT):(data_cnt)]:
@@ -459,7 +460,6 @@ class DataBase:
                 cpu_cnt = self._session.query(
                     func.count(DataBase.CpuStatus.id)
                     ).one()[0]
-                print "cpu_cnt: %d" % cpu_cnt
 
                 if cpu_cnt >= MAX_TABLE_CNT:
                     return True
@@ -469,7 +469,6 @@ class DataBase:
                 memory_cnt = self._session.query(
                     func.count(DataBase.MemoryStatus.id)
                     ).one()[0]
-                print "memory_cnt: %d" % memory_cnt
 
                 if memory_cnt >= MAX_TABLE_CNT:
                     return True
@@ -479,7 +478,6 @@ class DataBase:
                 disk_cnt = self._session.query(
                     func.count(DataBase.DiskStatus.id)
                     ).one()[0]
-                print "disk_cnt: %d" % disk_cnt
 
                 if disk_cnt >= MAX_TABLE_CNT:
                     return True
@@ -504,7 +502,7 @@ class GrepThread(threading.Thread):
             if cnt == grep_interval:
 
                 cpu_data = self.get_cpu_data()
-                logger.debug("cpu_data:%s" % cpu_data)
+                # logger.debug("cpu_data:%s" % cpu_data)
 
                 """
                 check db count is equal to max count or not,
@@ -517,7 +515,7 @@ class GrepThread(threading.Thread):
                 self._database.insert_table("cpu", cpu_data)
 
                 memory_data = self.get_memory_data()
-                logger.debug("memory_data:%s" % memory_data)
+                # logger.debug("memory_data:%s" % memory_data)
 
                 if self._database.check_table_count("memory"):
                     self._database.delete_table("memory")
@@ -525,7 +523,7 @@ class GrepThread(threading.Thread):
                 self._database.insert_table("memory", memory_data)
 
                 disk_data = self.get_disk_data()
-                logger.debug("disk_data:%s" % disk_data)
+                # logger.debug("disk_data:%s" % disk_data)
 
                 if self._database.check_table_count("disk"):
                     self._database.delete_table("disk")
