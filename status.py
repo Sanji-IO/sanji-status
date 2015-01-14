@@ -23,14 +23,16 @@ from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import OperationalError
 from mxc.flock import Flock
 
 logger = logging.getLogger()
 
 DB_PATH = "./status_db"
 
-# prepare lock
-global_lock = Flock(DB_PATH + ".lock")
+# # prepare lock
+# global_lock = Flock(DB_PATH + ".lock")
 
 
 class Status(Sanji):
@@ -55,7 +57,7 @@ class Status(Sanji):
         get MAX_RETURN_CNT cpu data from cpu table and then response
         """
 
-        cpu_database = DataBase()
+        cpu_database = DataBase(DB_PATH)
         retry_cnt = 0
         while retry_cnt < Status.RETRY_TIMES:
             try:
@@ -80,7 +82,7 @@ class Status(Sanji):
         get MAX_RETURN_CNT memory data from memory table and then response
         """
 
-        memory_database = DataBase()
+        memory_database = DataBase(DB_PATH)
         retry_cnt = 0
 
         while retry_cnt < Status.RETRY_TIMES:
@@ -108,7 +110,7 @@ class Status(Sanji):
         get MAX_RETURN_CNT disk data from disk table and then response
         """
 
-        disk_database = DataBase()
+        disk_database = DataBase(DB_PATH)
         retry_cnt = 0
 
         while retry_cnt < Status.RETRY_TIMES:
@@ -284,6 +286,7 @@ class ConvertData:
 class DataBase:
 
     Base = declarative_base()
+    MAX_TABLE_CNT = 5000
 
     # define cpu status table
     class CpuStatus(Base):
@@ -339,28 +342,29 @@ class DataBase:
             self.used = used
             self.time_stamp = time.time()
 
-    def __init__(self):
+    def __init__(self, db_path):
 
-        create_db_flag = 0
-
-        # check db file exist or not, if not, create a new file
-        if not os.path.isfile(DB_PATH):
-            open(DB_PATH, "a").close()
-            create_db_flag = 1
-            logger.debug("open db file")
+        # prepare lock
+        self._global_lock = Flock(db_path + ".lock")
 
         # prepare instance
-        self._engine = create_engine("sqlite:///" + DB_PATH)
+        self._engine = create_engine("sqlite:///" + db_path)
 
         # prepare session for communicate with db
         self._session = sessionmaker(bind=self._engine)()
 
-        # create db
-        if create_db_flag == 1:
+        # check db file exist or not, if not, create db
+        try:
+            self.get_table_count("cpu")
+            self.get_table_count("memory")
+            self.get_table_count("disk")
+        except (IndexError, NoResultFound, OperationalError):
             self._create_db()
+        finally:
+            self._session.close()
 
     def _create_db(self):
-        with global_lock:
+        with self._global_lock:
             logger.debug("create db")
 
             # delete all tables
@@ -370,7 +374,7 @@ class DataBase:
             DataBase.Base.metadata.create_all(self._engine)
 
     def insert_table(self, table_type, data):
-        with global_lock:
+        with self._global_lock:
             if table_type == "cpu":
                 self._session.add(DataBase.CpuStatus(
                     intime=data["time"],
@@ -398,7 +402,7 @@ class DataBase:
             self._session.commit()
 
     def delete_table(self, table_type):
-        with global_lock:
+        with self._global_lock:
             if table_type == "cpu":
                 del_obj = self._session.query(DataBase.CpuStatus).order_by(asc(
                     DataBase.CpuStatus.id))[0]
@@ -424,7 +428,7 @@ class DataBase:
                 logger.warning("delete table table_type error")
 
     def get_table_data(self, table_name):
-        with global_lock:
+        with self._global_lock:
             if table_name == "cpu":
                 return self._session.query(DataBase.CpuStatus).all()
             elif table_name == "memory":
@@ -433,7 +437,7 @@ class DataBase:
                 return self._session.query(DataBase.DiskStatus).all()
 
     def get_table_count(self, table_name):
-        with global_lock:
+        with self._global_lock:
             if table_name == "cpu":
                 return self._session.query(
                     func.count(DataBase.CpuStatus.id)
@@ -453,15 +457,13 @@ class DataBase:
         if equal, return True, else return false
         """
 
-        MAX_TABLE_CNT = 5000
-
-        with global_lock:
+        with self._global_lock:
             if table_name == "cpu":
                 cpu_cnt = self._session.query(
                     func.count(DataBase.CpuStatus.id)
                     ).one()[0]
 
-                if cpu_cnt >= MAX_TABLE_CNT:
+                if cpu_cnt >= DataBase.MAX_TABLE_CNT:
                     return True
                 return False
 
@@ -470,7 +472,7 @@ class DataBase:
                     func.count(DataBase.MemoryStatus.id)
                     ).one()[0]
 
-                if memory_cnt >= MAX_TABLE_CNT:
+                if memory_cnt >= DataBase.MAX_TABLE_CNT:
                     return True
                 return False
 
@@ -479,7 +481,7 @@ class DataBase:
                     func.count(DataBase.DiskStatus.id)
                     ).one()[0]
 
-                if disk_cnt >= MAX_TABLE_CNT:
+                if disk_cnt >= DataBase.MAX_TABLE_CNT:
                     return True
                 return False
 
@@ -492,7 +494,7 @@ class GrepThread(threading.Thread):
         self.stoprequest = threading.Event()
 
         # initialize db
-        self._database = DataBase()
+        self._database = DataBase(DB_PATH)
 
     def run(self):
         logger.debug("run GrepThread")
@@ -502,7 +504,7 @@ class GrepThread(threading.Thread):
             if cnt == grep_interval:
 
                 cpu_data = self.get_cpu_data()
-                # logger.debug("cpu_data:%s" % cpu_data)
+                logger.debug("cpu_data:%s" % cpu_data)
 
                 """
                 check db count is equal to max count or not,
@@ -515,7 +517,7 @@ class GrepThread(threading.Thread):
                 self._database.insert_table("cpu", cpu_data)
 
                 memory_data = self.get_memory_data()
-                # logger.debug("memory_data:%s" % memory_data)
+                logger.debug("memory_data:%s" % memory_data)
 
                 if self._database.check_table_count("memory"):
                     self._database.delete_table("memory")
@@ -523,7 +525,7 @@ class GrepThread(threading.Thread):
                 self._database.insert_table("memory", memory_data)
 
                 disk_data = self.get_disk_data()
-                # logger.debug("disk_data:%s" % disk_data)
+                logger.debug("disk_data:%s" % disk_data)
 
                 if self._database.check_table_count("disk"):
                     self._database.delete_table("disk")
