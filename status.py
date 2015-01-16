@@ -31,13 +31,10 @@ logger = logging.getLogger()
 
 DB_PATH = "./status_db"
 
-# # prepare lock
-# global_lock = Flock(DB_PATH + ".lock")
-
 
 class Status(Sanji):
 
-    MAX_RETURN_CNT = 10
+    MAX_RETURN_CNT = 500
     RETRY_TIMES = 5
     RETRY_INTERVAL = 5
 
@@ -286,7 +283,7 @@ class ConvertData:
 class DataBase:
 
     Base = declarative_base()
-    MAX_TABLE_CNT = 5000
+    MAX_TABLE_CNT = 600
 
     # define cpu status table
     class CpuStatus(Base):
