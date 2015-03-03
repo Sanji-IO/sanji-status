@@ -29,9 +29,8 @@ except ImportError as e:
 
 class TestStatusClass(unittest.TestCase):
 
-    @patch("status.Flock")
     @patch("status.Status.start_thread")
-    def setUp(self, start_thread, flock):
+    def setUp(self, start_thread):
         self.status = Status(connection=Mockup())
 
     def tearDown(self):
