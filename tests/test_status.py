@@ -12,6 +12,7 @@ from mock import call
 
 logger = logging.getLogger()
 
+
 try:
     sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
     from status import Status
