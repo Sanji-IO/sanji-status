@@ -26,7 +26,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError
-# from mxc.flock import Flock
 
 logger = logging.getLogger()
 
@@ -343,7 +342,6 @@ class DataBase:
     def __init__(self, db_path):
 
         # prepare lock
-        # self._global_lock = Flock(db_path + ".lock")
         self._global_lock = Condition()
 
         # prepare instance
