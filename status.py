@@ -25,10 +25,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError
-<<<<<<< HEAD
 from flock import Flock
-=======
->>>>>>> c7f0b94... remove unnecessary code
+
 
 logger = logging.getLogger()
 
@@ -345,11 +343,7 @@ class DataBase:
     def __init__(self, db_path):
 
         # prepare lock
-<<<<<<< HEAD
         self._global_lock = Flock(db_path + ".lock")
-=======
-        self._global_lock = Condition()
->>>>>>> c7f0b94... remove unnecessary code
 
         # prepare instance
         self._engine = create_engine("sqlite:///" + db_path)
