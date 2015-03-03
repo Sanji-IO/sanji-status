@@ -15,6 +15,7 @@ from sanji.model_initiator import ModelInitiator
 from sanji.connection.mqtt import Mqtt
 
 from threading import Thread
+from threading import Condition
 from datetime import timedelta
 
 from sqlalchemy import asc
@@ -25,7 +26,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError
-from mxc.flock import Flock
+# from mxc.flock import Flock
 
 logger = logging.getLogger()
 
@@ -342,7 +343,8 @@ class DataBase:
     def __init__(self, db_path):
 
         # prepare lock
-        self._global_lock = Flock(db_path + ".lock")
+        # self._global_lock = Flock(db_path + ".lock")
+        self._global_lock = Condition()
 
         # prepare instance
         self._engine = create_engine("sqlite:///" + db_path)
@@ -361,126 +363,134 @@ class DataBase:
             self._session.close()
 
     def _create_db(self):
-        with self._global_lock:
-            logger.debug("create db")
+        self._global_lock.acquire()
+        logger.debug("create db")
 
-            # delete all tables
-            DataBase.Base.metadata.drop_all(self._engine)
+        # delete all tables
+        DataBase.Base.metadata.drop_all(self._engine)
 
-            # create tables
-            DataBase.Base.metadata.create_all(self._engine)
+        # create tables
+        DataBase.Base.metadata.create_all(self._engine)
+        self._global_lock.release()
 
     def insert_table(self, table_type, data):
-        with self._global_lock:
-            if table_type == "cpu":
-                self._session.add(DataBase.CpuStatus(
-                    intime=data["time"],
-                    usage=data["usage"]
-                ))
-            elif table_type == "memory":
-                self._session.add(DataBase.MemoryStatus(
-                    intime=data["time"],
-                    usedPercentage=data["usedPercentage"],
-                    total=data["total"],
-                    free=data["free"],
-                    used=data["used"]
-                ))
-            elif table_type == "disk":
-                self._session.add(DataBase.DiskStatus(
-                    intime=data["time"],
-                    usedPercentage=data["usedPercentage"],
-                    total=data["total"],
-                    free=data["free"],
-                    used=data["used"]
-                ))
-            else:
-                logger.warning("insert_table table_type error")
+        self._global_lock.acquire()
+        if table_type == "cpu":
+            self._session.add(DataBase.CpuStatus(
+                intime=data["time"],
+                usage=data["usage"]
+            ))
+        elif table_type == "memory":
+            self._session.add(DataBase.MemoryStatus(
+                intime=data["time"],
+                usedPercentage=data["usedPercentage"],
+                total=data["total"],
+                free=data["free"],
+                used=data["used"]
+            ))
+        elif table_type == "disk":
+            self._session.add(DataBase.DiskStatus(
+                intime=data["time"],
+                usedPercentage=data["usedPercentage"],
+                total=data["total"],
+                free=data["free"],
+                used=data["used"]
+            ))
+        else:
+            logger.warning("insert_table table_type error")
 
-            self._session.commit()
+        self._session.commit()
+        self._global_lock.release()
 
     def delete_table(self, table_type):
-        with self._global_lock:
-            if table_type == "cpu":
-                del_obj = self._session.query(DataBase.CpuStatus).order_by(asc(
-                    DataBase.CpuStatus.id))[0]
+        self._global_lock.acquire()
 
-                # delete data by del_obj.id
-                self._session.query(DataBase.CpuStatus).filter_by(
-                    id=(del_obj.id)).delete()
-            elif table_type == "memory":
-                del_obj = self._session.query(DataBase.MemoryStatus).order_by(
-                    asc(DataBase.MemoryStatus.id))[0]
+        if table_type == "cpu":
+            del_obj = self._session.query(DataBase.CpuStatus).order_by(asc(
+                DataBase.CpuStatus.id))[0]
 
-                # delete data by del_obj.id
-                self._session.query(DataBase.MemoryStatus).filter_by(
-                    id=(del_obj.id)).delete()
-            elif table_type == "disk":
-                del_obj = self._session.query(DataBase.DiskStatus).order_by(
-                    asc(DataBase.DiskStatus.id))[0]
+            # delete data by del_obj.id
+            self._session.query(DataBase.CpuStatus).filter_by(
+                id=(del_obj.id)).delete()
+        elif table_type == "memory":
+            del_obj = self._session.query(DataBase.MemoryStatus).order_by(
+                asc(DataBase.MemoryStatus.id))[0]
 
-                # delete data by del_obj.id
-                self._session.query(DataBase.DiskStatus).filter_by(
-                    id=(del_obj.id)).delete()
-            else:
-                logger.warning("delete table table_type error")
+            # delete data by del_obj.id
+            self._session.query(DataBase.MemoryStatus).filter_by(
+                id=(del_obj.id)).delete()
+        elif table_type == "disk":
+            del_obj = self._session.query(DataBase.DiskStatus).order_by(
+                asc(DataBase.DiskStatus.id))[0]
+
+            # delete data by del_obj.id
+            self._session.query(DataBase.DiskStatus).filter_by(
+                id=(del_obj.id)).delete()
+        else:
+            logger.warning("delete table table_type error")
+        self._global_lock.release()
 
     def get_table_data(self, table_name):
-        with self._global_lock:
-            if table_name == "cpu":
-                return self._session.query(DataBase.CpuStatus).all()
-            elif table_name == "memory":
-                return self._session.query(DataBase.MemoryStatus).all()
-            elif table_name == "disk":
-                return self._session.query(DataBase.DiskStatus).all()
+        self._global_lock.acquire()
+
+        if table_name == "cpu":
+            return self._session.query(DataBase.CpuStatus).all()
+        elif table_name == "memory":
+            return self._session.query(DataBase.MemoryStatus).all()
+        elif table_name == "disk":
+            return self._session.query(DataBase.DiskStatus).all()
+        self._global_lock.release()
 
     def get_table_count(self, table_name):
-        with self._global_lock:
-            if table_name == "cpu":
-                return self._session.query(
-                    func.count(DataBase.CpuStatus.id)
-                    ).one()[0]
-            elif table_name == "memory":
-                return self._session.query(
-                    func.count(DataBase.MemoryStatus.id)
-                    ).one()[0]
-            elif table_name == "disk":
-                return self._session.query(
-                    func.count(DataBase.DiskStatus.id)
-                    ).one()[0]
+        self._global_lock.acquire()
+
+        if table_name == "cpu":
+            return self._session.query(
+                func.count(DataBase.CpuStatus.id)
+                ).one()[0]
+        elif table_name == "memory":
+            return self._session.query(
+                func.count(DataBase.MemoryStatus.id)
+                ).one()[0]
+        elif table_name == "disk":
+            return self._session.query(
+                func.count(DataBase.DiskStatus.id)
+                ).one()[0]
+        self._global_lock.release()
 
     def check_table_count(self, table_name):
         """
         check table count is equal to max_table_cnt or not,
         if equal, return True, else return false
         """
+        self._global_lock.acquire()
+        if table_name == "cpu":
+            cpu_cnt = self._session.query(
+                func.count(DataBase.CpuStatus.id)
+                ).one()[0]
 
-        with self._global_lock:
-            if table_name == "cpu":
-                cpu_cnt = self._session.query(
-                    func.count(DataBase.CpuStatus.id)
-                    ).one()[0]
+            if cpu_cnt >= DataBase.MAX_TABLE_CNT:
+                return True
+            return False
 
-                if cpu_cnt >= DataBase.MAX_TABLE_CNT:
-                    return True
-                return False
+        elif table_name == "memory":
+            memory_cnt = self._session.query(
+                func.count(DataBase.MemoryStatus.id)
+                ).one()[0]
 
-            elif table_name == "memory":
-                memory_cnt = self._session.query(
-                    func.count(DataBase.MemoryStatus.id)
-                    ).one()[0]
+            if memory_cnt >= DataBase.MAX_TABLE_CNT:
+                return True
+            return False
 
-                if memory_cnt >= DataBase.MAX_TABLE_CNT:
-                    return True
-                return False
+        elif table_name == "disk":
+            disk_cnt = self._session.query(
+                func.count(DataBase.DiskStatus.id)
+                ).one()[0]
 
-            elif table_name == "disk":
-                disk_cnt = self._session.query(
-                    func.count(DataBase.DiskStatus.id)
-                    ).one()[0]
-
-                if disk_cnt >= DataBase.MAX_TABLE_CNT:
-                    return True
-                return False
+            if disk_cnt >= DataBase.MAX_TABLE_CNT:
+                return True
+            return False
+        self._global_lock.release()
 
 
 class GrepThread(threading.Thread):
