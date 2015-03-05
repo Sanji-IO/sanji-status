@@ -25,7 +25,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError
-from mxc.flock import Flock
+from flock import Flock
 
 logger = logging.getLogger()
 
@@ -400,6 +400,7 @@ class DataBase:
 
     def delete_table(self, table_type):
         with self._global_lock:
+
             if table_type == "cpu":
                 del_obj = self._session.query(DataBase.CpuStatus).order_by(asc(
                     DataBase.CpuStatus.id))[0]
@@ -426,6 +427,7 @@ class DataBase:
 
     def get_table_data(self, table_name):
         with self._global_lock:
+
             if table_name == "cpu":
                 return self._session.query(DataBase.CpuStatus).all()
             elif table_name == "memory":
@@ -435,6 +437,7 @@ class DataBase:
 
     def get_table_count(self, table_name):
         with self._global_lock:
+
             if table_name == "cpu":
                 return self._session.query(
                     func.count(DataBase.CpuStatus.id)
@@ -453,7 +456,6 @@ class DataBase:
         check table count is equal to max_table_cnt or not,
         if equal, return True, else return false
         """
-
         with self._global_lock:
             if table_name == "cpu":
                 cpu_cnt = self._session.query(
