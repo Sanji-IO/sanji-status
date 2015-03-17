@@ -283,7 +283,7 @@ class ConvertData:
 class DataBase:
 
     Base = declarative_base()
-    MAX_TABLE_CNT = 600
+    MAX_TABLE_CNT = 5000
 
     # define cpu status table
     class CpuStatus(Base):
@@ -498,7 +498,7 @@ class GrepThread(threading.Thread):
     def run(self):
         logger.debug("run GrepThread")
         grep_interval = 60
-        cnt = 20
+        cnt = 60
         while not self.stoprequest.isSet():
             if cnt == grep_interval:
 
