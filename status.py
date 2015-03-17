@@ -497,7 +497,7 @@ class GrepThread(threading.Thread):
 
     def run(self):
         logger.debug("run GrepThread")
-        grep_interval = 20
+        grep_interval = 60
         cnt = 20
         while not self.stoprequest.isSet():
             if cnt == grep_interval:
