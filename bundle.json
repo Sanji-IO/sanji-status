@@ -15,20 +15,29 @@
   "ttl": 10,
   "resources": [
     {
-   "methods": ["get"],
-   "resource": "/system/status/cpu"
+      "methods": [
+        "get"
+      ],
+      "resource": "/system/status/cpu"
     },
     {
-   "methods": ["get"],
-   "resource": "/system/status/memory"
+      "methods": [
+        "get"
+      ],
+      "resource": "/system/status/memory"
     },
     {
-   "methods": ["get"],
-   "resource": "/system/status/disk"
+      "methods": [
+        "get"
+      ],
+      "resource": "/system/status/disk"
     },
     {
-   "methods": ["get", "put"],
-   "resource": "/system/status/showdata"
+      "methods": [
+        "get",
+        "put"
+      ],
+      "resource": "/system/status/showdata"
     }
   ]
 }
