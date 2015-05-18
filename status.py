@@ -283,7 +283,8 @@ class ConvertData:
 class DataBase:
 
     Base = declarative_base()
-    MAX_TABLE_CNT = 600
+    MAX_TABLE_CNT = 5000
+    MAX_TABLE_BUFFER_CNT = 1000
 
     # define cpu status table
     class CpuStatus(Base):
@@ -398,33 +399,6 @@ class DataBase:
 
             self._session.commit()
 
-    def delete_table(self, table_type):
-        with self._global_lock:
-
-            if table_type == "cpu":
-                del_obj = self._session.query(DataBase.CpuStatus).order_by(asc(
-                    DataBase.CpuStatus.id))[0]
-
-                # delete data by del_obj.id
-                self._session.query(DataBase.CpuStatus).filter_by(
-                    id=(del_obj.id)).delete()
-            elif table_type == "memory":
-                del_obj = self._session.query(DataBase.MemoryStatus).order_by(
-                    asc(DataBase.MemoryStatus.id))[0]
-
-                # delete data by del_obj.id
-                self._session.query(DataBase.MemoryStatus).filter_by(
-                    id=(del_obj.id)).delete()
-            elif table_type == "disk":
-                del_obj = self._session.query(DataBase.DiskStatus).order_by(
-                    asc(DataBase.DiskStatus.id))[0]
-
-                # delete data by del_obj.id
-                self._session.query(DataBase.DiskStatus).filter_by(
-                    id=(del_obj.id)).delete()
-            else:
-                logger.warning("delete table table_type error")
-
     def get_table_data(self, table_name):
         with self._global_lock:
 
@@ -453,8 +427,8 @@ class DataBase:
 
     def check_table_count(self, table_name):
         """
-        check table count is equal to max_table_cnt or not,
-        if equal, return True, else return false
+        check table count is bigger than (max_table_cnt + max_table_buffer_cnt)
+        or not, if bigger, delete max_table_buffer_cnt data in database
         """
         with self._global_lock:
             if table_name == "cpu":
@@ -462,27 +436,60 @@ class DataBase:
                     func.count(DataBase.CpuStatus.id)
                     ).one()[0]
 
-                if cpu_cnt >= DataBase.MAX_TABLE_CNT:
-                    return True
-                return False
+                if cpu_cnt >= (
+                    DataBase.MAX_TABLE_CNT + DataBase.MAX_TABLE_BUFFER_CNT
+                ):
+                    # delete database
+                    del_obj = self._session.query(
+                        DataBase.CpuStatus.id).order_by(
+                        asc(DataBase.CpuStatus.id)
+                        ).limit(DataBase.MAX_TABLE_BUFFER_CNT)
+
+                    for data in del_obj:
+                        self._session.query(
+                            DataBase.CpuStatus).filter_by(
+                            id=(data.id)).delete()
+                        self._session.commit()
 
             elif table_name == "memory":
                 memory_cnt = self._session.query(
                     func.count(DataBase.MemoryStatus.id)
                     ).one()[0]
 
-                if memory_cnt >= DataBase.MAX_TABLE_CNT:
-                    return True
-                return False
+                if memory_cnt >= (
+                    DataBase.MAX_TABLE_CNT + DataBase.MAX_TABLE_BUFFER_CNT
+                ):
+                    # delete database
+                    del_obj = self._session.query(
+                        DataBase.MemoryStatus.id).order_by(
+                        asc(DataBase.MemoryStatus.id)
+                        ).limit(DataBase.MAX_TABLE_BUFFER_CNT)
+
+                    for data in del_obj:
+                        self._session.query(
+                            DataBase.MemoryStatus).filter_by(
+                            id=(data.id)).delete()
+                        self._session.commit()
 
             elif table_name == "disk":
                 disk_cnt = self._session.query(
                     func.count(DataBase.DiskStatus.id)
                     ).one()[0]
 
-                if disk_cnt >= DataBase.MAX_TABLE_CNT:
-                    return True
-                return False
+                if disk_cnt >= (
+                    DataBase.MAX_TABLE_CNT + DataBase.MAX_TABLE_BUFFER_CNT
+                ):
+                    # delete database
+                    del_obj = self._session.query(
+                        DataBase.DiskStatus.id).order_by(
+                        asc(DataBase.DiskStatus.id)
+                        ).limit(DataBase.MAX_TABLE_BUFFER_CNT)
+
+                    for data in del_obj:
+                        self._session.query(
+                            DataBase.DiskStatus).filter_by(
+                            id=(data.id)).delete()
+                        self._session.commit()
 
 
 class GrepThread(threading.Thread):
@@ -497,38 +504,27 @@ class GrepThread(threading.Thread):
 
     def run(self):
         logger.debug("run GrepThread")
-        grep_interval = 20
-        cnt = 20
+        grep_interval = 60
+        cnt = 60
         while not self.stoprequest.isSet():
             if cnt == grep_interval:
 
                 cpu_data = self.get_cpu_data()
                 logger.debug("cpu_data:%s" % cpu_data)
 
-                """
-                check db count is equal to max count or not,
-                if equal, delete old data
-                """
-
-                if self._database.check_table_count("cpu"):
-                    self._database.delete_table("cpu")
-
+                self._database.check_table_count("cpu")
                 self._database.insert_table("cpu", cpu_data)
 
                 memory_data = self.get_memory_data()
                 logger.debug("memory_data:%s" % memory_data)
 
-                if self._database.check_table_count("memory"):
-                    self._database.delete_table("memory")
-
+                self._database.check_table_count("memory")
                 self._database.insert_table("memory", memory_data)
 
                 disk_data = self.get_disk_data()
                 logger.debug("disk_data:%s" % disk_data)
 
-                if self._database.check_table_count("disk"):
-                    self._database.delete_table("disk")
-
+                self._database.check_table_count("disk")
                 self._database.insert_table("disk", disk_data)
 
                 cnt = 0
