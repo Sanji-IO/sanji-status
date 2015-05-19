@@ -27,7 +27,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError
 from flock import Flock
 
-logger = logging.getLogger()
+_logger = logging.getLogger("sanji.status")
 
 DB_PATH = "./status_db"
 
@@ -66,7 +66,7 @@ class Status(Sanji):
                 cpu_database._session.close()
                 return response(data=return_data)
             except Exception as e:
-                logger.warning("get_cpu exception %s" % e)
+                _logger.warning("get_cpu exception %s" % e)
                 retry_cnt = retry_cnt + 1
                 time.sleep(Status.RETRY_INTERVAL)
 
@@ -94,7 +94,7 @@ class Status(Sanji):
                 memory_database._session.close()
                 return response(data=return_data)
             except Exception as e:
-                logger.warning("get_memory exception: %s" % e)
+                _logger.warning("get_memory exception: %s" % e)
                 retry_cnt = retry_cnt + 1
                 time.sleep(Status.RETRY_INTERVAL)
 
@@ -120,7 +120,7 @@ class Status(Sanji):
                 disk_database._session.close()
                 return response(data=return_data)
             except Exception as e:
-                logger.warning("get disk exception: %s" % e)
+                _logger.warning("get disk exception: %s" % e)
                 retry_cnt = retry_cnt + 1
                 time.sleep(Status.RETRY_INTERVAL)
 
@@ -158,25 +158,25 @@ class Status(Sanji):
 
             # save to thread pool
             self.thread_pool.append((t))
-            logger.debug("start thread pool: %s" % self.thread_pool)
+            _logger.debug("start thread pool: %s" % self.thread_pool)
             return True
 
         except Exception as e:
-            logger.debug("start thread error: %s" % e)
+            _logger.debug("start thread error: %s" % e)
             return False
 
     def kill_thread(self):
         try:
             # kill thread from thread pool
             for idx, value in enumerate(self.thread_pool):
-                logger.debug("kill thread id:%s" % value)
+                _logger.debug("kill thread id:%s" % value)
                 value.join()
 
                 # pop thread_id in thread pool
                 self.thread_pool.pop(idx)
             return True
         except Exception as e:
-            logger.debug("kill thread error: %s" % e)
+            _logger.debug("kill thread error: %s" % e)
             return False
 
     def parse_cpu_return_data(self, data_obj, data_cnt):
@@ -362,7 +362,7 @@ class DataBase:
 
     def _create_db(self):
         with self._global_lock:
-            logger.debug("create db")
+            _logger.debug("create db")
 
             # delete all tables
             DataBase.Base.metadata.drop_all(self._engine)
@@ -394,7 +394,7 @@ class DataBase:
                     used=data["used"]
                 ))
             else:
-                logger.warning("insert_table table_type error")
+                _logger.warning("insert_table table_type error")
 
             self._session.commit()
 
@@ -423,7 +423,7 @@ class DataBase:
                 self._session.query(DataBase.DiskStatus).filter_by(
                     id=(del_obj.id)).delete()
             else:
-                logger.warning("delete table table_type error")
+                _logger.warning("delete table table_type error")
 
     def get_table_data(self, table_name):
         with self._global_lock:
@@ -496,14 +496,14 @@ class GrepThread(threading.Thread):
         self._database = DataBase(DB_PATH)
 
     def run(self):
-        logger.debug("run GrepThread")
+        _logger.debug("run GrepThread")
         grep_interval = 20
         cnt = 20
         while not self.stoprequest.isSet():
             if cnt == grep_interval:
 
                 cpu_data = self.get_cpu_data()
-                logger.debug("cpu_data:%s" % cpu_data)
+                _logger.debug("cpu_data:%s" % cpu_data)
 
                 """
                 check db count is equal to max count or not,
@@ -516,7 +516,7 @@ class GrepThread(threading.Thread):
                 self._database.insert_table("cpu", cpu_data)
 
                 memory_data = self.get_memory_data()
-                logger.debug("memory_data:%s" % memory_data)
+                _logger.debug("memory_data:%s" % memory_data)
 
                 if self._database.check_table_count("memory"):
                     self._database.delete_table("memory")
@@ -524,7 +524,7 @@ class GrepThread(threading.Thread):
                 self._database.insert_table("memory", memory_data)
 
                 disk_data = self.get_disk_data()
-                logger.debug("disk_data:%s" % disk_data)
+                _logger.debug("disk_data:%s" % disk_data)
 
                 if self._database.check_table_count("disk"):
                     self._database.delete_table("disk")
@@ -536,12 +536,12 @@ class GrepThread(threading.Thread):
             time.sleep(1)
 
     def join(self):
-        logger.debug("join GrepThread")
+        _logger.debug("join GrepThread")
 
         # set event to stop while loop in run
         self.stoprequest.set()
         super(GrepThread, self).join()
-        logger.debug("join finished")
+        _logger.debug("join finished")
 
     def get_cpu_data(self):
         data = {"time": ConvertData.get_time(),
@@ -591,7 +591,7 @@ class SystemData:
                                        stderr=subprocess.PIPE)
             out = process.communicate()[0]
         except Exception as e:
-            logger.debug("get firmware version error: %s" % e)
+            _logger.debug("get firmware version error: %s" % e)
             return "N/A"
         return out
 
@@ -614,7 +614,7 @@ class SystemData:
 
     @staticmethod
     def set_hostname(name):
-        rc = subprocess.call("hostname -b %s" % name, shell=True)
+        rc = subprocess.call(["hostname", "-b", name])
         return True if rc == 0 else False
 
     def showdata(self):
@@ -624,7 +624,7 @@ class SystemData:
 if __name__ == '__main__':
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
     logging.basicConfig(level=0, format=FORMAT)
-    logger = logging.getLogger("ssh")
+    _logger = logging.getLogger("ssh")
 
     status = Status(connection=Mqtt())
     status.start()
