@@ -502,59 +502,6 @@ class TestDataBaseClass(unittest.TestCase):
 
         self.assertEqual(data, check_data)
 
-    def test_delete_table_with_cpu_type(self):
-
-        # arrange
-        data = {"time": "2015/01/01 11:12:13",
-                "usage": 55.6}
-        self.database.insert_table("cpu", data)
-        before_cnt = self.database.get_table_count("cpu")
-
-        # act
-        self.database.delete_table("cpu")
-
-        # assert
-        after_cnt = self.database.get_table_count("cpu")
-        self.assertEqual(before_cnt, after_cnt+1)
-
-    def test_delete_table_with_memory_type(self):
-
-        # arrange
-        data = {"time": "2015/01/01 11:12:13",
-                "total": "100 MB",
-                "used": "5 MB",
-                "free": "95 MB",
-                "usedPercentage": 5.0}
-
-        self.database.insert_table("memory", data)
-        before_cnt = self.database.get_table_count("memory")
-
-        # act
-        self.database.delete_table("memory")
-
-        # assert
-        after_cnt = self.database.get_table_count("memory")
-        self.assertEqual(before_cnt, after_cnt+1)
-
-    def test_delete_table_with_disk_type(self):
-
-        # arrange
-        data = {"time": "2015/01/01 11:12:13",
-                "total": "100 GB",
-                "used": "5 GB",
-                "free": "95 GB",
-                "usedPercentage": 5.0}
-
-        self.database.insert_table("disk", data)
-        before_cnt = self.database.get_table_count("disk")
-
-        # act
-        self.database.delete_table("disk")
-
-        # assert
-        after_cnt = self.database.get_table_count("disk")
-        self.assertEqual(before_cnt, after_cnt+1)
-
     def test_get_table_with_cpu_type(self):
 
         # arrange
@@ -702,113 +649,65 @@ class TestDataBaseClass(unittest.TestCase):
         # assert
         self.assertEqual(disk_cnt, 2)
 
-    def test_check_table_count_with_cpu_type_should_return_true(self):
+    def test_check_table_count_with_cpu_type(self):
 
         # arrange
-        DataBase.MAX_TABLE_CNT = 5
+        DataBase.MAX_TABLE_CNT = 2
+        DataBase.MAX_TABLE_BUFFER_CNT = 2
         data = {"time": "2015/01/01 11:12:13",
                 "usage": 55.6}
 
-        for i in range(1, 11):
+        for i in range(1, 5):
             self.database.insert_table("cpu", data)
 
         # act
-        rc = self.database.check_table_count("cpu")
+        self.database.check_table_count("cpu")
 
         # assert
-        self.assertEqual(rc, True)
+        cnt = self.database.get_table_count("cpu")
+        self.assertEqual(cnt, 2)
 
-    def test_check_table_count_with_cpu_type_should_return_false(self):
-
-        # arrange
-        DataBase.MAX_TABLE_CNT = 5
-        data = {"time": "2015/01/01 11:12:13",
-                "usage": 55.6}
-
-        for i in range(1, 3):
-            self.database.insert_table("cpu", data)
-
-        # act
-        rc = self.database.check_table_count("cpu")
-
-        # assert
-        self.assertEqual(rc, False)
-
-    def test_check_table_count_with_memory_type_should_return_true(self):
+    def test_check_table_count_with_memory_type(self):
 
         # arrange
-        DataBase.MAX_TABLE_CNT = 5
+        DataBase.MAX_TABLE_CNT = 2
+        DataBase.MAX_TABLE_BUFFER_CNT = 2
         data = {"time": "2015/01/01 11:12:13",
                 "total": "100 MB",
                 "used": "5 MB",
                 "free": "95 MB",
                 "usedPercentage": 5.0}
 
-        for i in range(1, 11):
+        for i in range(1, 5):
             self.database.insert_table("memory", data)
 
         # act
-        rc = self.database.check_table_count("memory")
+        self.database.check_table_count("memory")
 
         # assert
-        self.assertEqual(rc, True)
+        cnt = self.database.get_table_count("memory")
+        self.assertEqual(cnt, 2)
 
-    def test_check_table_count_with_memory_type_should_return_false(self):
-
-        # arrange
-        DataBase.MAX_TABLE_CNT = 5
-        data = {"time": "2015/01/01 11:12:13",
-                "total": "100 MB",
-                "used": "5 MB",
-                "free": "95 MB",
-                "usedPercentage": 5.0}
-
-        for i in range(1, 3):
-            self.database.insert_table("memory", data)
-
-        # act
-        rc = self.database.check_table_count("memory")
-
-        # assert
-        self.assertEqual(rc, False)
-
-    def test_check_table_count_with_disk_type_should_return_true(self):
+    def test_check_table_count_with_disk_type(self):
 
         # arrange
-        DataBase.MAX_TABLE_CNT = 5
+        DataBase.MAX_TABLE_CNT = 2
+        DataBase.MAX_TABLE_BUFFER_CNT = 2
         data = {"time": "2015/01/01 11:12:13",
                 "total": "100 GB",
                 "used": "5 GB",
                 "free": "95 GB",
                 "usedPercentage": 5.0}
 
-        for i in range(1, 11):
+        for i in range(1, 5):
             self.database.insert_table("disk", data)
 
         # act
-        rc = self.database.check_table_count("disk")
+        self.database.check_table_count("disk")
 
         # assert
-        self.assertEqual(rc, True)
-
-    def test_check_table_count_with_disk_type_should_return_false(self):
-
-        # arrange
-        DataBase.MAX_TABLE_CNT = 5
-        data = {"time": "2015/01/01 11:12:13",
-                "total": "100 GB",
-                "used": "5 GB",
-                "free": "95 GB",
-                "usedPercentage": 5.0}
-
-        for i in range(1, 3):
-            self.database.insert_table("disk", data)
-
-        # act
-        rc = self.database.check_table_count("disk")
-
-        # assert
-        self.assertEqual(rc, False)
+        cnt = self.database.get_table_count("disk")
+        self.assertEqual(cnt, 2)
 
 
 class TestGrepThreadClass(unittest.TestCase):
@@ -823,7 +722,7 @@ class TestGrepThreadClass(unittest.TestCase):
                  get_memory_data,
                  get_disk_data):
 
-        #arrange
+        # arrange
         self.grep_thread = GrepThread()
         cpu_msg = {"time": "2015/01/01 11:12:13",
                    "usage": 55.6}
@@ -843,7 +742,6 @@ class TestGrepThreadClass(unittest.TestCase):
         get_disk_data.return_value = disk_msg
 
         DataBase().check_table_count.return_value = True
-        delete_calls = [call("cpu"), call("memory"), call("disk")]
         insert_calls = [call("cpu", cpu_msg),
                         call("memory", memory_msg),
                         call("disk", disk_msg)]
@@ -854,7 +752,6 @@ class TestGrepThreadClass(unittest.TestCase):
         get_cpu_data.assert_called_with()
         get_memory_data.assert_called_with()
         get_disk_data.assert_called_with()
-        DataBase().delete_table.assert_has_calls(delete_calls, any_order=True)
         DataBase().insert_table.assert_has_calls(insert_calls, any_order=True)
         time.sleep(1)
         self.grep_thread.join()
