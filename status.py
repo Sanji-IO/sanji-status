@@ -399,7 +399,6 @@ class DataBase:
 
             self._session.commit()
 
-<<<<<<< HEAD
     def delete_table(self, table_type):
         with self._global_lock:
 
@@ -427,8 +426,6 @@ class DataBase:
             else:
                 _logger.warning("delete table table_type error")
 
-=======
->>>>>>> 580113b5d95191d3b54028d12eb59a4b8b8bbb3b
     def get_table_data(self, table_name):
         with self._global_lock:
 
@@ -533,15 +530,9 @@ class GrepThread(threading.Thread):
         self._database = DataBase(DB_PATH)
 
     def run(self):
-<<<<<<< HEAD
         _logger.debug("run GrepThread")
         grep_interval = 20
         cnt = 20
-=======
-        logger.debug("run GrepThread")
-        grep_interval = 60
-        cnt = 60
->>>>>>> 580113b5d95191d3b54028d12eb59a4b8b8bbb3b
         while not self.stoprequest.isSet():
             if cnt == grep_interval:
 
