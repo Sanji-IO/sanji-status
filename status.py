@@ -8,6 +8,7 @@ import time
 import psutil
 import subprocess
 import socket
+import re
 
 from sanji.core import Sanji
 from sanji.core import Route
@@ -27,9 +28,26 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError
 from flock import Flock
 
+from voluptuous import Schema
+from voluptuous import Required
+from voluptuous import REMOVE_EXTRA
+from voluptuous import Length
+from voluptuous import All
+from voluptuous import MultipleInvalid
+
+
 _logger = logging.getLogger("sanji.status")
 
 DB_PATH = "./status_db"
+HOSTNAME_REGEX = re.compile("[^a-zA-Z\d\-]")
+
+
+def isValidHostname(hostname):
+    if hostname[:1] != "-" and all(map(
+            lambda x: len(x) and not
+            HOSTNAME_REGEX.search(x), hostname.split("."))):
+        return hostname
+    raise MultipleInvalid("Invaild Hostname")
 
 
 class Status(Sanji):
@@ -37,6 +55,9 @@ class Status(Sanji):
     MAX_RETURN_CNT = 500
     RETRY_TIMES = 5
     RETRY_INTERVAL = 5
+    HOSTNAME_SCHEMA = Schema({
+        Required("hostname"): All(isValidHostname, Length(255))
+    }, extra=REMOVE_EXTRA)
 
     def init(self, *args, **kwargs):
         path_root = os.path.abspath(os.path.dirname(__file__))
@@ -132,19 +153,19 @@ class Status(Sanji):
         # Tcall SystemStatus class to get data
         return response(data=SystemData().showdata())
 
-    @Route(methods="put", resource="/system/status/showdata")
+    @Route(methods="put", resource="/system/status/showdata",
+           schema=HOSTNAME_SCHEMA)
     def put_system_data(self, message, response):
         if not(hasattr(message, "data")):
             return response(code=400, data={"message": "Invaild Input"})
-        self.model.db["hostname"] = message.data["hostname"]
-        self.model.save_db()
-        # setup hostname
         rc = SystemData.set_hostname(message.data["hostname"])
         if rc is True:
+            self.model.db["hostname"] = message.data["hostname"]
+            self.model.save_db()
             return response(data=self.model.db)
         else:
-            return response(code=400, data={"message":
-                                            "Set hostname error"})
+            return response(
+                code=400, data={"message": "Set hostname error"})
 
     def start_thread(self):
         try:
