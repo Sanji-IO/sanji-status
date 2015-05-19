@@ -56,7 +56,7 @@ class Status(Sanji):
     RETRY_TIMES = 5
     RETRY_INTERVAL = 5
     HOSTNAME_SCHEMA = Schema({
-        Required("hostname"): All(isValidHostname, Length(255))
+        Required("hostname"): All(isValidHostname, Length(1, 255))
     }, extra=REMOVE_EXTRA)
 
     def init(self, *args, **kwargs):
