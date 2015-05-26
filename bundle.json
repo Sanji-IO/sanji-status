@@ -1,6 +1,6 @@
 {
   "name": "status",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "author": "Jordan Chen",
   "email": "jordan.chen@moxa.com",
   "description": "Handle the data of status",
@@ -12,7 +12,7 @@
   "dependencies": {},
   "repository": "",
   "role": "model",
-  "ttl": 10,
+  "ttl": 20,
   "resources": [
     {
       "methods": [
