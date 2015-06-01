@@ -1,8 +1,9 @@
 all: pylint test
 
 pylint:
-	flake8 --exclude=tests,.git,env -v .
+	flake8 --exclude=tests,.git,env,.env -v .
+
 test:
-	nosetests --with-coverage --cover-erase --cover-package=status
+	nosetests --with-coverage --cover-erase --cover-package=sanji_status
 
 .PHONY: pylint test
