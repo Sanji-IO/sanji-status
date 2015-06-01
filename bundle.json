@@ -1,9 +1,9 @@
 {
   "name": "status",
-  "version": "0.9.3",
-  "author": "Jordan Chen",
-  "email": "jordan.chen@moxa.com",
-  "description": "Handle the data of status",
+  "version": "0.9.4",
+  "author": "TC Huang",
+  "email": "tc.huang@moxa.com",
+  "description": "Provide system status",
   "license": "MOXA",
   "main": "status.py",
   "argument": "",
