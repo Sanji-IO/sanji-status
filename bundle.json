@@ -1,6 +1,6 @@
 {
   "name": "status",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "author": "TC Huang",
   "email": "tc.huang@moxa.com",
   "description": "Provide system status",
@@ -12,7 +12,7 @@
   "dependencies": {},
   "repository": "",
   "role": "model",
-  "ttl": 10,
+  "ttl": 20,
   "resources": [
     {
       "methods": [
