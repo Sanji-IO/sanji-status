@@ -38,7 +38,9 @@ def is_valid_hostname(hostname):
 
 class Status(Sanji):
 
-    DB_PATH = os.path.join('/', 'dev', 'shm', 'sanji-bundle-status', 'history.sqlite3')
+    DB_PATH = os.path.join(
+        '/', 'dev', 'shm', 'sanji-bundle-status', 'history.sqlite3'
+    )
     LOG_COUNT = 300
     LOG_INTERVAL_SEC = 1
 
