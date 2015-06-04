@@ -38,7 +38,7 @@ def is_valid_hostname(hostname):
 
 class Status(Sanji):
 
-    DB_PATH = "./status_db"
+    DB_PATH = os.path.join('/', 'dev', 'shm', 'sanji-bundle-status', 'history.sqlite3')
     LOG_COUNT = 300
     LOG_INTERVAL_SEC = 1
 
@@ -49,6 +49,8 @@ class Status(Sanji):
     def init(self, *args, **kwargs):
         path_root = os.path.abspath(os.path.dirname(__file__))
         self.model = ModelInitiator("status", path_root, backup_interval=1)
+
+        subprocess.call(['mkdir', '-p', os.path.dirname(Status.DB_PATH)])
 
         database = Database(Status.DB_PATH)
         database.create_tables_if_needed()
