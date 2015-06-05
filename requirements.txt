@@ -3,4 +3,3 @@ paho-mqtt
 coveralls
 sanji
 psutil
-sqlalchemy

@@ -1,0 +1,24 @@
+
+include debian.conf
+VER    ?=
+DIST   ?= unstable
+CURVER = $(shell dpkg-parsechangelog | sed -n 's/^Version: //p')
+SRCDIR = sanji-bundle-$(NAME)-$(CURVER)
+
+
+release:
+	@$(CURDIR)/release.sh $(DIST) $(VER)
+
+deb:
+	mkdir -p build-deb/$(SRCDIR)
+	mkdir -p data
+	cp -a debian build-deb/$(SRCDIR)/
+	cp -a debian.conf build-deb/$(SRCDIR)/
+	cp -a debian.mk build-deb/$(SRCDIR)/Makefile
+	cp -a $(FILES) $(DIRS) build-deb/$(SRCDIR)/
+	(cd build-deb/$(SRCDIR); \
+		dpkg-buildpackage -us -uc -rfakeroot;)
+
+clean:
+	rm -rf build-deb
+
