@@ -55,3 +55,10 @@ target/
 
 data/*.json
 data/*.backup
+
+/sanji-bundle-status_*.tar.gz
+build-deb/*.deb
+build-deb/*.changes
+build-deb/*.dsc
+build-deb/*.tar.gz
+build-deb/staging/
