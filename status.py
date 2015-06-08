@@ -137,7 +137,7 @@ class Status(Sanji):
         with open('/proc/uptime', 'r') as f:
             uptime_sec = float(f.readline().split()[0])
 
-        disk_free_byte = psutil.disk_usage().free
+        disk_free_byte = psutil.disk_usage('/').free
 
         return response(
             code=200,
