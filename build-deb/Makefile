@@ -1,6 +1,8 @@
 PROJ_DIR=$(abspath ..)
 PROJECT=sanji-bundle-status
-VERSION=0.9.6
+VERSION=$(shell cat $(PROJ_DIR)/bundle.json | sed -n 's/"version"//p' | tr -d '", :')
+DEBVERSION=1
+
 STAGING_DIR=$(abspath staging)
 
 UPSTREAM_ARCHIVE=$(PROJECT)_$(VERSION).tar.gz
@@ -34,7 +36,7 @@ extract-upstream:
 	tar zxf $(PROJ_DIR)/$(UPSTREAM_ARCHIVE)
 
 changelog:
-	dch -v $(VERSION) -M -u low
+	dch -v $(VERSION)-$(DEBVERSION) -M -u low --release-heuristic log
 
 clean:
 	rm -rf $(STAGING_DIR) $(PROJECT)_*

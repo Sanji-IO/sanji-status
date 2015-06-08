@@ -1,5 +1,6 @@
 PROJECT=sanji-bundle-status
-VERSION=$(shell jq '.version' bundle.json | tr -d "\"")
+VERSION=$(shell cat bundle.json | sed -n 's/"version"//p' | tr -d '", :')
+
 ARCHIVE=$(abspath $(PROJECT)_$(VERSION).tar.gz)
 
 SANJI_VER=1.0
