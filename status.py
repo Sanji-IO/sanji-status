@@ -8,6 +8,8 @@ import subprocess
 import socket
 import re
 
+from subprocess import CalledProcessError
+
 from sanji.core import Sanji
 from sanji.core import Route
 from sanji.model_initiator import ModelInitiator
@@ -134,8 +136,10 @@ class Status(Sanji):
         hostname = socket.gethostname()
         firmware = subprocess.check_output(['kversion', '-a'])[:-1]
 
+        mxcloud_version = self._get_mxcloud_version()
+
         with open('/proc/uptime', 'r') as f:
-            uptime_sec = float(f.readline().split()[0])
+            uptime_sec = int(float(f.readline().split()[0]))
 
         disk_free_byte = psutil.disk_usage('/').free
 
@@ -144,6 +148,7 @@ class Status(Sanji):
             data={
                 'hostname': hostname,
                 'firmware': firmware,
+                'mxcloudVersion': mxcloud_version,
                 'uptimeSec': uptime_sec,
                 'diskFreeByte': disk_free_byte
             }
@@ -202,6 +207,21 @@ class Status(Sanji):
         exit_status = subprocess.call(['hostname', '-b', hostname])
         if exit_status != 0:
             raise ValueError
+
+    def _get_mxcloud_version(self):
+
+        for package in ['mxcloud-cs', 'mxcloud-cg']:
+            try:
+                pkg_info = subprocess.check_output(['dpkg', '-s', package])
+                break
+            except CalledProcessError:
+                continue
+
+        match = re.search(r'Version: (\S+)', pkg_info)
+        if not match:
+            return '(not installed)'
+
+        return match.group(1)
 
 
 def str_from_datetime(time_dt):

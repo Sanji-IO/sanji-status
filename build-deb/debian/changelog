@@ -1,3 +1,9 @@
+sanji-bundle-status (0.9.9-1) trusty; urgency=low
+
+  * Updated /system/status/showdata interface.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 13:54:09 +0800
+
 sanji-bundle-status (0.9.8-1) trusty; urgency=low
 
   * Fixed make install targets.
