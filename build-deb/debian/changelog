@@ -1,3 +1,9 @@
+sanji-bundle-status (0.9.6-1) trusty; urgency=low
+
+  * Updated deb-package building scripts.
+
+ -- TC Huang <tc.huang@moxa.com>  Mon, 08 Jun 2015 21:11:39 +0800
+
 sanji-bundle-status (0.9.6) UNRELEASED; urgency=low
 
   * Updated deb-package building scripts.

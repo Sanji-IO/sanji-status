@@ -1,35 +1,18 @@
 sanji-status
-==========
+============
 
-Status bundle
+This bundle provides system-status related interfaces.
 
-## Usage
-
-### Release a New Version
-Both `debian/changelog` and `bundle.json` will be updated by new version.
+## Build
 
 ```
-make release [DIST=] [VER=]
+make archive
+make -C build-deb
 ```
 
-arguments:
- - [DIST]     optional; default is unstable
- - [VER]      optional; the version will be increased automatically by default
+## Commit Changes
 
-### Build Debian Package
-```
-make deb [SANJI_VER=]
-```
+Whenever a set of changes are ready to be committed, you should:
 
-arguments:
- - [SANJI_VER]  optional; sanji's version, default to 1.0
-
-### Add or Remove Files
-Edit `debian.conf` to add or remove files/directories from `FILES` or `DIRS`.
-
-variables:
- - `SANJI_VER`: sanji version
- - `NAME`: bundle name
- - `FILES`: files to be installed
- - `DIRS`: directories to be installed
-
+1. Update `version` in `bundle.json`.
+2. Use `make -C build-deb changelog` to add change-logs.
