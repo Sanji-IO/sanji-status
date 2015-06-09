@@ -1,3 +1,9 @@
+sanji-bundle-status (0.9.8-1) trusty; urgency=low
+
+  * Fixed make install targets.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 13:16:30 +0800
+
 sanji-bundle-status (0.9.7-2) trusty; urgency=low
 
   * Fixed installation error.
