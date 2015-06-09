@@ -12,7 +12,6 @@ FILES= \
 	README.md \
 	requirements.txt \
 	status.py \
-	data/status.json \
 	data/status.json.factory \
 	sanji_status/dao.py \
 	sanji_status/flock.py \

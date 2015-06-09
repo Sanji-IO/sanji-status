@@ -1,3 +1,9 @@
+sanji-bundle-status (0.9.7-1) trusty; urgency=low
+
+  * Fixed CI build error.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 11:30:18 +0800
+
 sanji-bundle-status (0.9.6-1) trusty; urgency=low
 
   * Updated deb-package building scripts.
