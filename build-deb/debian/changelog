@@ -1,3 +1,9 @@
+sanji-bundle-status (0.9.7-2) trusty; urgency=low
+
+  * Fixed installation error.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 11:56:07 +0800
+
 sanji-bundle-status (0.9.7-1) trusty; urgency=low
 
   * Fixed CI build error.
