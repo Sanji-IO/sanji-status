@@ -1,3 +1,27 @@
+sanji-bundle-status (0.9.9-1) trusty; urgency=low
+
+  * Updated /system/status/showdata interface.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 13:54:09 +0800
+
+sanji-bundle-status (0.9.8-1) trusty; urgency=low
+
+  * Fixed make install targets.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 13:16:30 +0800
+
+sanji-bundle-status (0.9.7-2) trusty; urgency=low
+
+  * Fixed installation error.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 11:56:07 +0800
+
+sanji-bundle-status (0.9.7-1) trusty; urgency=low
+
+  * Fixed CI build error.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 11:30:18 +0800
+
 sanji-bundle-status (0.9.6-1) trusty; urgency=low
 
   * Updated deb-package building scripts.

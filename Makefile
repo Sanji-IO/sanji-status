@@ -12,12 +12,13 @@ FILES= \
 	README.md \
 	requirements.txt \
 	status.py \
-	data/status.json \
 	data/status.json.factory \
 	sanji_status/dao.py \
 	sanji_status/flock.py \
 	sanji_status/__init__.py \
 	sanji_status/monitor.py
+
+INSTALL_FILES=$(addprefix $(INSTALL_DIR)/,$(FILES))
 
 .PHONY: pylint test build
 
@@ -37,9 +38,11 @@ archive: $(ARCHIVE)
 $(ARCHIVE): $(FILES)
 	tar zcf $@ $(FILES)
 
-install: $(FILES)
-	install -d $(INSTALL_DIR)
-	install $(FILES) $(INSTALL_DIR)
+install: $(INSTALL_FILES)
+
+$(INSTALL_DIR)/%: %
+	mkdir -p $(dir $@)
+	install $< $@
 
 uninstall:
 	-rm $(addprefix $(INSTALL_DIR)/,$(FILES))
