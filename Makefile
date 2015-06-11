@@ -1,13 +1,17 @@
 PROJECT=sanji-bundle-status
 VERSION=$(shell cat bundle.json | sed -n 's/"version"//p' | tr -d '", :')
 
-ARCHIVE=$(CURDIR)/$(PROJECT)_$(VERSION).tar.gz
+PROJECT_VERSION=$(PROJECT)-$(VERSION)
+
+ARCHIVE=$(CURDIR)/$(PROJECT)-$(VERSION).tar.gz
 
 SANJI_VER=1.0
 
 INSTALL_DIR=$(DESTDIR)/usr/lib/sanji-$(SANJI_VER)/$(PROJECT)
 
 STAGING_DIR=$(CURDIR)/staging
+
+PROJECT_STAGING_DIR=$(STAGING_DIR)/$(PROJECT_VERSION)
 
 FILES= \
 	bundle.json \
@@ -23,14 +27,14 @@ FILES= \
 
 INSTALL_FILES=$(addprefix $(INSTALL_DIR)/,$(FILES))
 
-STAGING_FILES=$(addprefix $(STAGING_DIR)/$(PROJECT)/,$(FILES))
+STAGING_FILES=$(addprefix $(PROJECT_STAGING_DIR)/,$(FILES))
 
 .PHONY: clean dist pylint test
 
 all:
 
 clean:
-	rm -rf $(PROJECT)_*.tar.gz $(STAGING_DIR)
+	rm -rf $(PROJECT)-*.tar.gz $(STAGING_DIR)
 
 dist: $(ARCHIVE)
 
@@ -42,9 +46,9 @@ test:
 
 $(ARCHIVE): $(STAGING_FILES)
 	cd $(STAGING_DIR) && \
-	tar zcf $@ $(PROJECT)
+	tar zcf $@ $(PROJECT_VERSION)
 
-$(STAGING_DIR)/$(PROJECT)/%: %
+$(PROJECT_STAGING_DIR)/%: %
 	mkdir -p $(dir $@)
 	cp -a $< $@
 
