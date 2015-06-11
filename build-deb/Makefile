@@ -1,7 +1,7 @@
 PROJ_DIR=$(abspath ..)
 PROJECT=sanji-bundle-status
 VERSION=$(shell cat $(PROJ_DIR)/bundle.json | sed -n 's/"version"//p' | tr -d '", :')
-DEBVERSION=2
+DEBVERSION=3
 
 STAGING_DIR=$(abspath staging)
 

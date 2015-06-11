@@ -1,3 +1,9 @@
+sanji-bundle-status (0.9.9-3) trusty; urgency=low
+
+  * Updated build-deb scripts
+
+ -- TC Huang <tc.huang@moxa.com>  Thu, 11 Jun 2015 15:38:19 +0800
+
 sanji-bundle-status (0.9.9-2) trusty; urgency=low
 
   * Updated build-deb scripts. 

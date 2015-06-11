@@ -6,7 +6,7 @@ This bundle provides system-status related interfaces.
 ## Build
 
 ```
-make archive
+make dist
 make -C build-deb
 ```
 
