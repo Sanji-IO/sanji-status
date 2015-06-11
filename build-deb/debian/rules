@@ -9,6 +9,12 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+DEB_PACKAGE := $(strip $(shell dh_listpackages -i 2>/dev/null || dh_listpackages -i))
+DEB_DESTDIR := $(CURDIR)/debian/$(DEB_PACKAGE)
+
+DEB_PYPDIR  := $(DEB_DESTDIR)/tmp/packages
+
+
 %:
 	dh $@
 
@@ -16,6 +22,6 @@ override_dh_auto_test:
 
 override_dh_auto_install:
 	dh_auto_install
-	mkdir -p $$(pwd)/debian/sanji-bundle-status/tmp/packages
-	pip install -r requirements.txt --download $$(pwd)/debian/sanji-bundle-status/tmp/packages
-	cp requirements.txt $$(pwd)/debian/sanji-bundle-status/tmp/packages/bundle-requirements.txt
+	mkdir -p $(DEB_PYPDIR)
+	cp -a requirements.txt $(DEB_PYPDIR)
+	pip install -r requirements.txt --download $(DEB_PYPDIR)
