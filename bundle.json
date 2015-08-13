@@ -1,6 +1,6 @@
 {
   "name": "status",
-  "version": "0.9.9",
+  "version": "0.9.10",
   "author": "TC Huang",
   "email": "tc.huang@moxa.com",
   "description": "Provide system status",
