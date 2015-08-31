@@ -2,6 +2,7 @@
 Lock a file for IPC Mutex.
 '''
 import fcntl
+from threading import Lock
 
 
 class Flock(object):
@@ -11,22 +12,25 @@ class Flock(object):
         self._path = path
         self._fd = open(self._path, 'w')
         self._is_locked = False
+        self._lock = Lock()
 
     def acquire(self):
         '''Acquire lock'''
-        if self._is_locked:
-            raise AlreadyLockedError
+        with self._lock:
+            if self._is_locked:
+                raise AlreadyLockedError
 
-        fcntl.flock(self._fd, fcntl.LOCK_EX)
-        self._is_locked = True
+            fcntl.flock(self._fd, fcntl.LOCK_EX)
+            self._is_locked = True
 
     def release(self):
         '''Release lock'''
-        if not self._is_locked:
-            raise NotLockedError
+        with self._lock:
+            if not self._is_locked:
+                raise NotLockedError
 
-        fcntl.flock(self._fd, fcntl.LOCK_UN)
-        self._is_locked = False
+            fcntl.flock(self._fd, fcntl.LOCK_UN)
+            self._is_locked = False
 
     def __del__(self):
         '''Garbage collection'''
