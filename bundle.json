@@ -16,28 +16,10 @@
   "resources": [
     {
       "methods": [
-        "get"
-      ],
-      "resource": "/system/status/cpu"
-    },
-    {
-      "methods": [
-        "get"
-      ],
-      "resource": "/system/status/memory"
-    },
-    {
-      "methods": [
-        "get"
-      ],
-      "resource": "/system/status/disk"
-    },
-    {
-      "methods": [
         "get",
         "put"
       ],
-      "resource": "/system/status/showdata"
+      "resource": "/system/status"
     }
   ]
 }

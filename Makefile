@@ -42,7 +42,7 @@ pylint:
 	flake8 --exclude=tests,.git,env,.env -v .
 
 test:
-	nosetests --with-coverage --cover-erase --cover-package=sanji_status
+	nosetests --with-coverage --cover-erase --cover-package=status -v
 
 $(ARCHIVE): $(STAGING_FILES)
 	cd $(STAGING_DIR) && \
