@@ -1,5 +1,6 @@
-PROJECT=sanji-bundle-status
-VERSION=$(shell cat bundle.json | sed -n 's/"version"//p' | tr -d '", :')
+NAME    = $(shell cat bundle.json | sed -n 's/"name"//p' | tr -d '", :')
+PROJECT = sanji-bundle-$(NAME)
+VERSION = $(shell cat bundle.json | sed -n 's/"version"//p' | tr -d '", :')
 
 PROJECT_VERSION=$(PROJECT)-$(VERSION)
 
@@ -19,11 +20,7 @@ FILES= \
 	README.md \
 	requirements.txt \
 	status.py \
-	data/status.json.factory \
-	sanji_status/dao.py \
-	sanji_status/flock.py \
-	sanji_status/__init__.py \
-	sanji_status/monitor.py
+	data/status.json.factory
 
 INSTALL_FILES=$(addprefix $(INSTALL_DIR)/,$(FILES))
 
@@ -39,7 +36,7 @@ clean:
 dist: $(ARCHIVE)
 
 pylint:
-	flake8 --exclude=tests,.git,env,.env -v .
+	flake8 --exclude=.git,env,.env -v .
 
 test:
 	nosetests --with-coverage --cover-erase --cover-package=status -v

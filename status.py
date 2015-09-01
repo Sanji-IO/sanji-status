@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+import os
 import logging
+import sh
 import psutil
-import subprocess
 import socket
 import re
-
-from subprocess import CalledProcessError
 
 from sanji.core import Sanji
 from sanji.core import Route
 from sanji.connection.mqtt import Mqtt
+from sanji.model_initiator import ModelInitiator
 
 from voluptuous import Schema
 from voluptuous import Required
@@ -41,53 +41,101 @@ class Status(Sanji):
     }, extra=REMOVE_EXTRA)
 
     def init(self, *args, **kwargs):
-        pass
+        try:  # pragma: no cover
+            bundle_env = kwargs["bundle_env"]
+        except KeyError:
+            bundle_env = os.getenv("BUNDLE_ENV", "debug")
+
+        # load configuration
+        self.path_root = os.path.abspath(os.path.dirname(__file__))
+        if bundle_env == "debug":  # pragma: no cover
+            self.path_root = "%s/tests" % self.path_root
+
+        try:
+            self.load(self.path_root)
+        except:
+            self.stop()
+            raise IOError("Cannot load any configuration.")
+
+        # find product name
+        try:
+            output = sh.grep(sh.dpkg("-l"), "mxcloud")
+            self.product = output.split()[1]
+        except:
+            self.product = None
+
+    def load(self, path):
+        """
+        Load the configuration. If configuration is not installed yet,
+        initialise them with default value.
+
+        Args:
+            path: Path for the bundle, the configuration should be located
+                under "data" directory.
+        """
+        self.model = ModelInitiator("status", path, backup_interval=-1)
+        if self.model.db is None:
+            raise IOError("Cannot load any configuration.")
+        self.save()
+
+    def save(self):
+        """
+        Save and backup the configuration.
+        """
+        self.model.save_db()
+        self.model.backup_db()
+
+    def get_hostname(self):
+        try:
+            return socket.gethostname()
+        except:
+            return ""
 
     def set_hostname(self, hostname):
-        exit_status = subprocess.call(['hostname', '-b', hostname])
-        if exit_status != 0:
-            raise ValueError
+        try:
+            sh.hostname("-b", hostname)
+        except Exception as e:
+            raise e
 
     def get_product_version(self):
 
-        for package in ['mxcloud-cg']:
-            try:
-                pkg_info = subprocess.check_output(['dpkg', '-s', package])
-                break
-            except CalledProcessError:
-                continue
+        try:
+            pkg_info = sh.dpkg("-s", self.product)
 
-        match = re.search(r'Version: (\S+)', pkg_info)
-        if not match:
-            return '(not installed)'
-
-        return match.group(1)
+            match = re.search(r"Version: (\S+)", pkg_info)
+            if match:
+                return match.group(1)
+        except:
+            pass
+        return "(not installed)"
 
     @Route(methods="get", resource="/system/status")
-    def get_system_info(self, message, response):
-        # Tcall SystemStatus class to get data
-        hostname = socket.gethostname()
-
+    def get_status(self, message, response):
+        hostname = self.get_hostname()
         product_version = self.get_product_version()
 
-        with open('/proc/uptime', 'r') as f:
+        with open("/proc/uptime", "r") as f:
             uptime_sec = int(float(f.readline().split()[0]))
 
-        disk_free_byte = psutil.disk_usage('/').free
+        disk_usage = psutil.disk_usage("/")
 
         return response(
             code=200,
             data={
-                'hostname': hostname,
-                'version': product_version,
-                'uptimeSec': uptime_sec,
-                'diskFreeByte': disk_free_byte
+                "hostname": hostname,
+                "version": product_version,
+                "uptimeSec": uptime_sec,
+                "diskUsage": {
+                    "total": disk_usage.total,
+                    "used": disk_usage.used,
+                    "free": disk_usage.free,
+                    "percent": disk_usage.percent
+                }
             }
         )
 
-    @Route(methods="put", resource="/system/status",
-           schema=HOSTNAME_SCHEMA)
-    def put_system_info(self, message, response):
+    @Route(methods="put", resource="/system/status")
+    def put_status(self, message, response, schema=HOSTNAME_SCHEMA):
         if not(hasattr(message, "data")):
             return response(code=400, data={"message": "Invaild Input"})
 
@@ -95,7 +143,8 @@ class Status(Sanji):
         self.set_hostname(hostname)
 
         self.model.db['hostname'] = hostname
-        self.model.save_db()
+        self.save()
+        return response(data=self.model.db)
 
 
 if __name__ == '__main__':
