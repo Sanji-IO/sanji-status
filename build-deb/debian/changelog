@@ -1,3 +1,10 @@
+sanji-bundle-status (0.9.11-1) unstable; urgency=low
+
+  * Remove cpu, memory, and disk status
+  * Add detail information for disk usage
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 01 Sep 2015 16:40:14 +0800
+
 sanji-bundle-status (0.9.9-3) trusty; urgency=low
 
   * Updated build-deb scripts

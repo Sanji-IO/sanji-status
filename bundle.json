@@ -1,8 +1,8 @@
 {
   "name": "status",
-  "version": "0.9.10",
-  "author": "TC Huang",
-  "email": "tc.huang@moxa.com",
+  "version": "0.9.11",
+  "author": "Aeluin Chen",
+  "email": "aeluin.chen@moxa.com",
   "description": "Provide system status",
   "license": "MOXA",
   "main": "status.py",
