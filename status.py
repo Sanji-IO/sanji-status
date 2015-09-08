@@ -119,6 +119,9 @@ class Status(Sanji):
 
         disk_usage = psutil.disk_usage("/")
 
+        # FIXME: Most Linux filesystems reserve 5% space for use only the
+        # root user. Use the following commane to check:
+        #   $ sudo dumpe2fs /dev/mmcblk0p2 | grep -i reserved
         return response(
             code=200,
             data={
@@ -129,7 +132,7 @@ class Status(Sanji):
                     "total": disk_usage.total,
                     "used": disk_usage.used,
                     "free": disk_usage.free,
-                    "percent": disk_usage.percent
+                    "percent": disk_usage.percent + 5
                 }
             }
         )
