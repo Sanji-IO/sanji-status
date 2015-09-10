@@ -1,3 +1,17 @@
+sanji-bundle-status (0.9.12-1) unstable; urgency=low
+
+  * Add 5% on disk usage; filesystems reserve 5% space for use only the root
+    user.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Tue, 08 Sep 2015 09:55:15 +0800
+
+sanji-bundle-status (0.9.11-1) unstable; urgency=low
+
+  * Remove cpu, memory, and disk status
+  * Add detail information for disk usage
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Tue, 01 Sep 2015 16:40:14 +0800
+
 sanji-bundle-status (0.9.9-3) trusty; urgency=low
 
   * Updated build-deb scripts

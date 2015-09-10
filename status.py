@@ -1,19 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import logging
 import os
+import logging
+import sh
 import psutil
-import subprocess
 import socket
 import re
 
-from subprocess import CalledProcessError
-
 from sanji.core import Sanji
 from sanji.core import Route
-from sanji.model_initiator import ModelInitiator
 from sanji.connection.mqtt import Mqtt
+from sanji.model_initiator import ModelInitiator
 
 from voluptuous import Schema
 from voluptuous import Required
@@ -22,8 +20,6 @@ from voluptuous import Length
 from voluptuous import All
 from voluptuous import MultipleInvalid
 
-from sanji_status.dao import Database
-from sanji_status.monitor import MonitorThread
 
 _logger = logging.getLogger("sanji.status")
 
@@ -40,123 +36,109 @@ def is_valid_hostname(hostname):
 
 class Status(Sanji):
 
-    DB_PATH = os.path.join(
-        '/', 'dev', 'shm', 'sanji-bundle-status', 'history.sqlite3'
-    )
-    LOG_COUNT = 300
-    LOG_INTERVAL_SEC = 1
-
     HOSTNAME_SCHEMA = Schema({
         Required("hostname"): All(is_valid_hostname, Length(1, 255))
     }, extra=REMOVE_EXTRA)
 
     def init(self, *args, **kwargs):
-        path_root = os.path.abspath(os.path.dirname(__file__))
-        self.model = ModelInitiator("status", path_root, backup_interval=1)
+        try:  # pragma: no cover
+            bundle_env = kwargs["bundle_env"]
+        except KeyError:
+            bundle_env = os.getenv("BUNDLE_ENV", "debug")
 
-        subprocess.call(['mkdir', '-p', os.path.dirname(Status.DB_PATH)])
+        # load configuration
+        self.path_root = os.path.abspath(os.path.dirname(__file__))
+        if bundle_env == "debug":  # pragma: no cover
+            self.path_root = "%s/tests" % self.path_root
 
-        database = Database(Status.DB_PATH)
-        database.create_tables_if_needed()
+        try:
+            self.load(self.path_root)
+        except:
+            self.stop()
+            raise IOError("Cannot load any configuration.")
 
-        # init thread pool
-        self.thread_pool = []
+        # find product name
+        try:
+            output = sh.grep(sh.dpkg("-l"), "mxcloud")
+            self.product = output.split()[1]
+        except:
+            self.product = None
 
-        # start a thread to get status
-        self.start_thread()
-
-    @Route(methods="get", resource="/system/status/cpu")
-    def get_cpu(self, message, response):
-        database = Database(Status.DB_PATH)
-        reading_list = database.get_latest_readings(Status.LOG_COUNT)
-        _logger.debug('get_cpu(): len(reading_list) = %d', len(reading_list))
-
-        return response(
-            code=200,
-            data=[
-                {
-                    'time': str_from_datetime(reading[0]),
-                    'percent': reading[1]
-                }
-                for reading in reading_list
-            ]
-        )
-
-    @Route(methods="get", resource="/system/status/memory")
-    def get_memory(self, message, response):
+    def load(self, path):
         """
-        get MAX_RETURN_CNT memory data from memory table and then response
+        Load the configuration. If configuration is not installed yet,
+        initialise them with default value.
+
+        Args:
+            path: Path for the bundle, the configuration should be located
+                under "data" directory.
         """
+        self.model = ModelInitiator("status", path, backup_interval=-1)
+        if self.model.db is None:
+            raise IOError("Cannot load any configuration.")
+        self.save()
 
-        database = Database(Status.DB_PATH)
-        reading_list = database.get_latest_readings(Status.LOG_COUNT)
-
-        total_byte = psutil.virtual_memory().total
-
-        return response(
-            code=200,
-            data=[
-                {
-                    'time': str_from_datetime(reading[0]),
-                    'totalByte': total_byte,
-                    'usedByte': reading[2],
-                    'usedPercent': reading[2] * 100.0 / total_byte
-                }
-                for reading in reading_list
-            ]
-        )
-
-    @Route(methods="get", resource="/system/status/disk")
-    def get_disk(self, message, response):
+    def save(self):
         """
-        get MAX_RETURN_CNT disk data from disk table and then response
+        Save and backup the configuration.
         """
+        self.model.save_db()
+        self.model.backup_db()
 
-        database = Database(Status.DB_PATH)
-        reading_list = database.get_latest_readings(Status.LOG_COUNT)
+    def get_hostname(self):
+        try:
+            return socket.gethostname()
+        except:
+            return ""
 
-        total_byte = psutil.disk_usage('/').total
+    def set_hostname(self, hostname):
+        try:
+            sh.hostname("-b", hostname)
+        except Exception as e:
+            raise e
 
-        return response(
-            code=200,
-            data=[
-                {
-                    'time': str_from_datetime(reading[0]),
-                    'totalByte': total_byte,
-                    'usedByte': reading[3],
-                    'usedPercent': reading[3] * 100.0 / total_byte
-                }
-                for reading in reading_list
-            ]
-        )
+    def get_product_version(self):
 
-    @Route(methods="get", resource="/system/status/showdata")
-    def get_system_data(self, message, response):
-        # Tcall SystemStatus class to get data
-        hostname = socket.gethostname()
-        firmware = subprocess.check_output(['kversion', '-a'])[:-1]
+        try:
+            pkg_info = sh.dpkg("-s", self.product)
 
-        mxcloud_version = self._get_mxcloud_version()
+            match = re.search(r"Version: (\S+)", pkg_info)
+            if match:
+                return match.group(1)
+        except:
+            pass
+        return "(not installed)"
 
-        with open('/proc/uptime', 'r') as f:
+    @Route(methods="get", resource="/system/status")
+    def get_status(self, message, response):
+        hostname = self.get_hostname()
+        product_version = self.get_product_version()
+
+        with open("/proc/uptime", "r") as f:
             uptime_sec = int(float(f.readline().split()[0]))
 
-        disk_free_byte = psutil.disk_usage('/').free
+        disk_usage = psutil.disk_usage("/")
 
+        # FIXME: Most Linux filesystems reserve 5% space for use only the
+        # root user. Use the following commane to check:
+        #   $ sudo dumpe2fs /dev/mmcblk0p2 | grep -i reserved
         return response(
             code=200,
             data={
-                'hostname': hostname,
-                'firmware': firmware,
-                'mxcloudVersion': mxcloud_version,
-                'uptimeSec': uptime_sec,
-                'diskFreeByte': disk_free_byte
+                "hostname": hostname,
+                "version": product_version,
+                "uptimeSec": uptime_sec,
+                "diskUsage": {
+                    "total": disk_usage.total,
+                    "used": disk_usage.used,
+                    "free": disk_usage.free,
+                    "percent": disk_usage.percent + 5
+                }
             }
         )
 
-    @Route(methods="put", resource="/system/status/showdata",
-           schema=HOSTNAME_SCHEMA)
-    def put_system_data(self, message, response):
+    @Route(methods="put", resource="/system/status")
+    def put_status(self, message, response, schema=HOSTNAME_SCHEMA):
         if not(hasattr(message, "data")):
             return response(code=400, data={"message": "Invaild Input"})
 
@@ -164,74 +146,14 @@ class Status(Sanji):
         self.set_hostname(hostname)
 
         self.model.db['hostname'] = hostname
-        self.model.save_db()
-
-    def start_thread(self):
-        try:
-            kill_rc = self.kill_thread()
-            if kill_rc is False:
-                return False
-
-            # start thread to grep status
-            t = MonitorThread(
-                Status.DB_PATH,
-                Status.LOG_INTERVAL_SEC,
-                Status.LOG_COUNT
-            )
-            t.start()
-
-            # save to thread pool
-            self.thread_pool.append((t))
-            _logger.debug("start thread pool: %s" % self.thread_pool)
-            return True
-
-        except Exception as e:
-            _logger.debug("start thread error: %s" % e)
-            return False
-
-    def kill_thread(self):
-        try:
-            # kill thread from thread pool
-            for idx, value in enumerate(self.thread_pool):
-                _logger.debug("kill thread id:%s" % value)
-                value.join()
-
-                # pop thread_id in thread pool
-                self.thread_pool.pop(idx)
-            return True
-        except Exception as e:
-            _logger.debug("kill thread error: %s" % e)
-            return False
-
-    def set_hostname(self, hostname):
-        exit_status = subprocess.call(['hostname', '-b', hostname])
-        if exit_status != 0:
-            raise ValueError
-
-    def _get_mxcloud_version(self):
-
-        for package in ['mxcloud-cs', 'mxcloud-cg']:
-            try:
-                pkg_info = subprocess.check_output(['dpkg', '-s', package])
-                break
-            except CalledProcessError:
-                continue
-
-        match = re.search(r'Version: (\S+)', pkg_info)
-        if not match:
-            return '(not installed)'
-
-        return match.group(1)
-
-
-def str_from_datetime(time_dt):
-    return time_dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+        self.save()
+        return response(data=self.model.db)
 
 
 if __name__ == '__main__':
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
     logging.basicConfig(level=0, format=FORMAT)
-    _logger = logging.getLogger("ssh")
+    _logger = logging.getLogger("status")
 
     status = Status(connection=Mqtt())
     status.start()

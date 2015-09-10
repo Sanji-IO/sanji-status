@@ -1,24 +1,20 @@
 {
-  "name": "status",
-  "version": "0.9.12",
+  "name": "view-status",
+  "version": "1.0",
   "author": "Aeluin Chen",
   "email": "aeluin.chen@moxa.com",
-  "description": "Provide system status",
+  "description": "A test view for status bundle",
   "license": "MOXA",
-  "main": "status.py",
+  "main": "view_status.py",
   "argument": "",
-  "priority": 25,
+  "priority": 20,
   "hook": [],
   "dependencies": {},
   "repository": "",
-  "role": "model",
-  "ttl": 20,
+  "role": "view",
+  "ttl": 10,
   "resources": [
     {
-      "methods": [
-        "get",
-        "put"
-      ],
       "resource": "/system/status"
     }
   ]

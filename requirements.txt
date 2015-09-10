@@ -1,5 +1,4 @@
-flake8
 paho-mqtt
-coveralls
 sanji
 psutil
+sh
