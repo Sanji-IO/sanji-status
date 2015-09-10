@@ -5,10 +5,11 @@ VERSION    = $(shell cat $(PROJ_DIR)/bundle.json | sed -n 's/"version"//p' | tr 
 
 PROJECT    = sanji-bundle-$(NAME)
 DEBVERSION = 1
+DIST        ?= unstable
 
 STAGING_DIR=$(abspath $(PROJECT)-$(VERSION))
-
 UPSTREAM_ARCHIVE=$(PROJECT)-$(VERSION).tar.gz
+UPSTREAM_ORIG_ARCHIVE = $(PROJECT)_$(VERSION).orig.tar.gz
 
 FILES= \
 	$(STAGING_DIR)/debian/changelog \
@@ -34,10 +35,12 @@ $(STAGING_DIR)/debian/%: $(PROJ_DIR)/build-deb/debian/%
 	cp $< $@
 
 extract-upstream:
-	tar zxf $(PROJ_DIR)/$(UPSTREAM_ARCHIVE)
+	cp -a $(PROJ_DIR)/$(UPSTREAM_ARCHIVE) $(UPSTREAM_ORIG_ARCHIVE)
+	tar zxf $(UPSTREAM_ORIG_ARCHIVE)
 
 changelog:
-	dch -v $(VERSION)-$(DEBVERSION) -M -u low --release-heuristic log
+	dch -v $(VERSION)-$(DEBVERSION) -D $(DIST) -M -u low \
+		--release-heuristic log
 
 clean:
 	rm -rf $(STAGING_DIR) $(PROJECT)-* $(PROJECT)_*
