@@ -1,3 +1,11 @@
+sanji-bundle-status (0.9.13-1) unstable; urgency=low
+
+  * Bugfix: version cannot be retrieved
+  * Change install target direction from "sanji-bundle-status" to
+    "status"
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Tue, 16 Sep 2015 05:30:10 +0800
+
 sanji-bundle-status (0.9.12-1) unstable; urgency=low
 
   * Add 5% on disk usage; filesystems reserve 5% space for use only the root

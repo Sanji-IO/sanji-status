@@ -74,7 +74,7 @@ class TestStatusClass(unittest.TestCase):
         init
         """
         mock_grep.return_value = \
-            "ii uc8100-mxcloud-cg 0.1.2-1 all mxcloud package for ..."
+            "uc8100-mxcloud-cg install"
         self.bundle.init()
         self.assertEqual(self.bundle.product, "uc8100-mxcloud-cg")
 
