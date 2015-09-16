@@ -59,8 +59,9 @@ class Status(Sanji):
 
         # find product name
         try:
-            output = sh.grep(sh.dpkg("-l"), "mxcloud")
-            self.product = output.split()[1]
+            output = sh.grep(sh.dpkg("--get-selections"), "-E",
+                             "mxcloud.*install")
+            self.product = output.split()[0]
         except:
             self.product = None
 
@@ -102,7 +103,7 @@ class Status(Sanji):
         try:
             pkg_info = sh.dpkg("-s", self.product)
 
-            match = re.search(r"Version: (\S+)", pkg_info)
+            match = re.search(r"Version: (\S+)", str(pkg_info))
             if match:
                 return match.group(1)
         except:
