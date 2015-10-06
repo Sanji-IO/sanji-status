@@ -20,6 +20,10 @@
         "put"
       ],
       "resource": "/system/status"
+    },
+    {
+      "methods": "post",
+      "resource": "/system/syslog"
     }
   ]
 }

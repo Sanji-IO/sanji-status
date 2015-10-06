@@ -7,6 +7,10 @@ import sh
 import psutil
 import socket
 import re
+import tarfile
+import glob
+import requests
+import datetime
 
 from sanji.core import Sanji
 from sanji.core import Route
@@ -32,6 +36,24 @@ def is_valid_hostname(hostname):
             HOSTNAME_REGEX.search(x), hostname.split("."))):
         return hostname
     raise MultipleInvalid("Invaild Hostname")
+
+
+def tar_syslog_files(output):
+    """
+    Tar and Compress (gz) syslog files to output directory
+    """
+    filelist = glob.glob("/var/log/syslog*") + \
+        glob.glob("/var/log/uc8100-webapp*") + \
+        glob.glob("/var/log/sanji*")
+
+    with tarfile.open(output, "w:gz") as tar:
+        for name in filelist:
+            if not os.path.exists(name):
+                continue
+            _logger.debug("Packing %s" % (name))
+            tar.add(name, arcname=os.path.basename(name))
+
+    return output
 
 
 class Status(Sanji):
@@ -150,11 +172,37 @@ class Status(Sanji):
         self.save()
         return response(data=self.model.db)
 
+    @Route(methods="post", resource="/system/syslog")
+    def post_syslog(self, message, response):
+        output = tar_syslog_files(
+            "/run/shm/syslog-%s.tar.gz" %
+            (datetime.datetime.now().strftime("%Y%m%d%H%M")))
+        headers = message.data.get("headers", {})
+        r = requests.post(
+                message.data["url"],
+                files={output: open(output, "rb")},
+                headers=headers,
+                verify=False
+            )
+
+        if r.status_code != requests.codes.ok:
+            return response(
+                code=r.status_code,
+                data={"message": "Can't upload config."}
+            )
+
+        sh.rm("-rf", sh.glob("/run/shm/syslog-*.tar.gz"))
+        resp = r.json()
+        if "url" not in resp:
+            return response(
+                code=500, data={"message": "Can't get file link."})
+
+        return response(data={"url": resp["url"]})
 
 if __name__ == '__main__':
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
     logging.basicConfig(level=0, format=FORMAT)
     _logger = logging.getLogger("status")
-
+    logging.getLogger("sh").setLevel(logging.WARN)
     status = Status(connection=Mqtt())
     status.start()
