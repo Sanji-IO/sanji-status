@@ -179,11 +179,11 @@ class Status(Sanji):
             (datetime.datetime.now().strftime("%Y%m%d%H%M")))
         headers = message.data.get("headers", {})
         r = requests.post(
-                message.data["url"],
-                files={output: open(output, "rb")},
-                headers=headers,
-                verify=False
-            )
+            message.data["url"],
+            files={output: open(output, "rb")},
+            headers=headers,
+            verify=False
+        )
 
         if r.status_code != requests.codes.ok:
             return response(
