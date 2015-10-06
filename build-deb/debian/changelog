@@ -1,3 +1,9 @@
+sanji-bundle-status (0.9.14-1) unstable; urgency=low
+
+  * Feature: add syslog download function
+
+ -- YuLun Shih <zackyl.shih@moxa.com>  Tue, 06 Oct 2015 14:16:02 +0800
+
 sanji-bundle-status (0.9.13-1) unstable; urgency=low
 
   * Bugfix: version cannot be retrieved

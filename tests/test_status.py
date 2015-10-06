@@ -6,7 +6,10 @@ import sys
 import sh
 import logging
 import unittest
+import requests
 from mock import patch
+from mock import Mock
+from mock import ANY
 
 from sanji.connection.mockup import Mockup
 from sanji.message import Message
@@ -170,6 +173,49 @@ class TestStatusClass(unittest.TestCase):
             self.assertEqual("test", data["hostname"])
         self.bundle.put_status(message=message, response=resp, test=True)
         self.assertEqual("test", self.bundle.model.db["hostname"])
+
+    @patch("status.tar_syslog_files")
+    @patch("status.requests.post")
+    @patch("status.sh")
+    def test_post_syslog(
+            self, mock_sh, mock_post_requests, mock_tar_syslog_files):
+        """
+        post
+        "data": {
+            "hostname": "test"
+        }
+        """
+        message = Message({
+            "data": {
+                "headers": {
+                    "xxx": "yyy"
+                },
+                "url": "https://localhost"
+            }, "query": {}, "param": {}})
+        download_url = "https://localhost/api/v1/download/123456789"
+        filename = "xxx.tar.gz"
+        mock_tar_syslog_files.return_value = filename
+        mock_post_result = Mock()
+        mock_post_requests.return_value = mock_post_result
+        mock_post_result.status_code = requests.codes.ok
+        mock_post_result.json.return_value = {
+            "url": download_url
+        }
+
+        def resp(code=200, data=None):
+            self.assertEqual(200, code)
+            self.assertEqual(download_url, data["url"])
+
+        with patch("__builtin__.open"):
+            self.bundle.post_syslog(message=message, response=resp, test=True)
+        mock_tar_syslog_files.assert_called_once_with(ANY)
+        self.assertTrue(sh.rm.called)
+        mock_post_requests.assert_called_once_with(
+            message.data["url"],
+            files={filename: ANY},
+            headers=message.data["headers"],
+            verify=False
+        )
 
 if __name__ == "__main__":
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
