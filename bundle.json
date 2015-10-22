@@ -1,6 +1,6 @@
 {
   "name": "status",
-  "version": "0.9.14",
+  "version": "0.9.15",
   "author": "Aeluin Chen",
   "email": "aeluin.chen@moxa.com",
   "description": "Provide system status",

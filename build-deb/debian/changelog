@@ -1,3 +1,9 @@
+sanji-bundle-status (0.9.15-1) unstable; urgency=low
+
+  * Bugfix: hostname will rollback to old one after reboot.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Thu, 22 Oct 2015 14:03:40 +0800
+
 sanji-bundle-status (0.9.14-1) unstable; urgency=low
 
   * Feature: add syslog download function
@@ -6,11 +12,10 @@ sanji-bundle-status (0.9.14-1) unstable; urgency=low
 
 sanji-bundle-status (0.9.13-1) unstable; urgency=low
 
-  * Bugfix: version cannot be retrieved
-  * Change install target direction from "sanji-bundle-status" to
-    "status"
+  * Bugfix: `dpkg -l` cannot retrieve full package name in console, that will
+    cause version cannot be fetched.
 
- -- Aeluin Chen <aeluin.chen@moxa.com>  Tue, 16 Sep 2015 05:30:10 +0800
+ -- TC Huang <tc.huang@moxa.com>  Tue, 15 Sep 2015 19:35:37 +0800
 
 sanji-bundle-status (0.9.12-1) unstable; urgency=low
 
@@ -34,7 +39,7 @@ sanji-bundle-status (0.9.9-3) trusty; urgency=low
 
 sanji-bundle-status (0.9.9-2) trusty; urgency=low
 
-  * Updated build-deb scripts. 
+  * Updated build-deb scripts.
 
  -- TC Huang <tc.huang@moxa.com>  Thu, 11 Jun 2015 11:45:31 +0800
 
