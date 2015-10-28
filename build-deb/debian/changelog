@@ -1,3 +1,9 @@
+sanji-bundle-status (0.9.16-1) unstable; urgency=low
+
+  * Update: Product version from x.x.x to x.x .
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Wed, 28 Oct 2015 14:15:49 +0800
+
 sanji-bundle-status (0.9.15-1) unstable; urgency=low
 
   * Bugfix: hostname will rollback to old one after reboot.
