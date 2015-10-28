@@ -133,7 +133,7 @@ class TestStatusClass(unittest.TestCase):
         """
         mock_dpkg.return_value = PKG_STATUS
         version = self.bundle.get_product_version()
-        self.assertEqual("0.1.2-1", version)
+        self.assertEqual("0.1", version)
 
     @patch("sh.dpkg")
     def test__get_product_version__failed(self, mock_dpkg):
