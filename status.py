@@ -128,7 +128,8 @@ class Status(Sanji):
 
             match = re.search(r"Version: (\S+)", str(pkg_info))
             if match:
-                return match.group(1)
+                version = match.group(1).split(".")
+                return "%s.%s" % (version[0], version[1])
         except:
             pass
         return "(not installed)"
