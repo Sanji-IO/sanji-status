@@ -117,6 +117,7 @@ class Status(Sanji):
     def set_hostname(self, hostname):
         try:
             sh.hostname("-b", hostname)
+            sh.echo(hostname, _out="/etc/hostname")
         except Exception as e:
             raise e
 
