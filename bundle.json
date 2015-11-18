@@ -1,11 +1,11 @@
 {
   "name": "status",
-  "version": "0.9.17",
+  "version": "0.10.1",
   "author": "Aeluin Chen",
   "email": "aeluin.chen@moxa.com",
   "description": "Provide system status",
   "license": "MOXA",
-  "main": "status.py",
+  "main": "index.py",
   "argument": "",
   "priority": 25,
   "hook": [],
@@ -24,6 +24,10 @@
     {
       "methods": "post",
       "resource": "/system/syslog"
+    },
+    {
+      "methods": "get",
+      "resource": "/network/interfaces"
     }
   ]
 }
