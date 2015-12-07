@@ -1,3 +1,9 @@
+sanji-bundle-status (0.9.17-1) unstable; urgency=low
+
+  * Update: export syslog files.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Mon, 07 Dec 2015 13:57:59 +0800
+
 sanji-bundle-status (0.9.16-1) unstable; urgency=low
 
   * Update: Product version from x.x.x to x.x .
