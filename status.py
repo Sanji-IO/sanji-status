@@ -8,7 +8,6 @@ import psutil
 import socket
 import re
 import tarfile
-import glob
 import requests
 import datetime
 
