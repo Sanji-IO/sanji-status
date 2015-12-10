@@ -207,4 +207,4 @@ if __name__ == '__main__':
     print status.get_disks()
     print status.getAll()
     print status.get(id=1)
-    #status.set_hostname("test")
+    # status.set_hostname("test")
