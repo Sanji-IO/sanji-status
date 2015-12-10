@@ -6,11 +6,11 @@ import logging
 import sh
 import requests
 import datetime
+import status
 
 from sanji.core import Sanji
 from sanji.core import Route
 from sanji.connection.mqtt import Mqtt
-import status
 
 from voluptuous import Schema
 from voluptuous import Required, REMOVE_EXTRA, Length, Any, All
@@ -32,12 +32,11 @@ class Index(Sanji):
     @Route(methods="get", resource="/system/status")
     def get_status(self, message, response):
         return response(
-            code=200,
             data={
                 "hostname": self.status.get_hostname(),
                 "version": self.status.get_product_version(),
                 "uptimeSec": self.status.get_uptime(),
-                "memory": self.get_memory(),
+                "memory": self.status.get_memory(),
                 "disks": self.status.get_disks()
             }
         )

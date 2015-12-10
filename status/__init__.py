@@ -53,15 +53,6 @@ class StatusError(Exception):
 
 class Status(Model):
 
-    def init(self, *args, **kwargs):
-        # find product name
-        try:
-            output = sh.grep(sh.dpkg("--get-selections"), "-E",
-                             "mxcloud.*install")
-            self.product = output.split()[0]
-        except:
-            self.product = None
-
     def get_hostname(self):
         """Get hostname
 
@@ -96,12 +87,7 @@ class Status(Model):
         """
         # FIXME: get version via pversion
         try:
-            pkg_info = sh.dpkg("-s", self.product)
-
-            match = re.search(r"Version: (\S+)", str(pkg_info))
-            if match:
-                version = match.group(1).split(".")
-                return "%s.%s" % (version[0], version[1])
+            return sh.pversion().split(" ")[2]
         except:
             pass
         return "(not installed)"
@@ -143,6 +129,8 @@ class Status(Model):
         if dev is None:
             return None
         alias = "%s" % mapping["alias"]
+        if mapping["part"] is None:
+            return alias
         part = mapping["part"].findall(dev.group(0))
         if part is not None:
             alias += "-%s" % "-".join(part)
@@ -154,6 +142,9 @@ class Status(Model):
         # search() for device
         # findall() for drive and partition
         dev_mapping = [
+            {"alias": "System",
+             "device": re.compile("/dev/root"),
+             "part": None},
             {"alias": "SD",
              "device": re.compile("(?<=/dev/mmcblk)\w+"),
              "part": re.compile("^\d+|\d+$")},
@@ -206,7 +197,7 @@ class Status(Model):
 
 
 if __name__ == '__main__':
-    path_root = os.path.abspath(os.path.dirname(__file__) + "/../")
+    path_root = os.path.dirname(os.path.abspath(__file__)) + "/../"
     status = Status(name="status", path=path_root)
     print status.get_hostname()
     print status.get_product_version()
