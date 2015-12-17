@@ -1,3 +1,13 @@
+sanji-bundle-status (0.10.1-1) unstable; urgency=low
+
+  * Refactoring
+  * Add `/network/interfaces` for interface list.
+  * Add memory information into status get.
+  * Enhance disk usage to multi-partition disks usage.
+  * TODO: update unittest
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Thu, 19 Nov 2015 06:14:53 +0800
+
 sanji-bundle-status (0.9.17-1) unstable; urgency=low
 
   * Update: export syslog files.

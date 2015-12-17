@@ -3,3 +3,4 @@ sanji
 psutil
 sh
 requests
+netifaces

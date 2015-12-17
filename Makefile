@@ -19,7 +19,8 @@ FILES= \
 	Makefile \
 	README.md \
 	requirements.txt \
-	status.py \
+	index.py \
+	status/__init__.py \
 	data/status.json.factory
 
 INSTALL_FILES=$(addprefix $(INSTALL_DIR)/,$(FILES))

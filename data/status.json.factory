@@ -1,3 +1,6 @@
-{
-	"hostname": "Moxa"
-}
+[
+  {
+    "id": 1,
+    "hostname": "Moxa"
+  }
+]
