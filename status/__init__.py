@@ -87,7 +87,7 @@ class Status(Model):
         """
         # FIXME: get version via pversion
         try:
-            return sh.pversion().split(" ")[2]
+            return " ".join(sh.pversion().split(" ")[2:])
         except:
             pass
         return "(not installed)"
