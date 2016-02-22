@@ -1,3 +1,10 @@
+sanji-bundle-status (0.10.2-1) unstable; urgency=low
+
+  * Show build date in version field.
+  * Update uittest.
+
+ -- TC Huang <tc.huang@moxa.com>  Mon, 22 Feb 2016 13:26:57 +0800
+
 sanji-bundle-status (0.10.1-1) unstable; urgency=low
 
   * Refactoring
