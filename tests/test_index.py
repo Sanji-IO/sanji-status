@@ -4,8 +4,10 @@ import os
 import sys
 import unittest
 import glob
+import requests
 from mock import Mock
 from mock import patch
+from mock import ANY
 from sanji.connection.mockup import Mockup
 from sanji.message import Message
 
@@ -87,6 +89,49 @@ class TestIndexClass(unittest.TestCase):
         resp = Mock()
         self.index.get_net_interface(message=None, response=resp, test=True)
         resp.assert_called_once_with(data=mock_netifaces.return_value)
+
+    @patch("status.tar_syslog_files")
+    @patch("index.requests.post")
+    @patch("index.sh")
+    def test_post_syslog(
+            self, mock_sh, mock_post_requests, mock_tar_syslog_files):
+        """
+        post
+        "data": {
+            "hostname": "test"
+        }
+        """
+        message = Message({
+            "data": {
+                "headers": {
+                    "xxx": "yyy"
+                },
+                "url": "https://localhost"
+            }, "query": {}, "param": {}})
+        download_url = "https://localhost/api/v1/download/123456789"
+        filename = "xxx.tar.gz"
+        mock_tar_syslog_files.return_value = filename
+        mock_post_result = Mock()
+        mock_post_requests.return_value = mock_post_result
+        mock_post_result.status_code = requests.codes.ok
+        mock_post_result.json.return_value = {
+            "url": download_url
+        }
+
+        def resp(code=200, data=None):
+            self.assertEqual(200, code)
+            self.assertEqual(download_url, data["url"])
+
+        with patch("__builtin__.open"):
+            self.index.post_syslog(message=message, response=resp, test=True)
+        mock_tar_syslog_files.assert_called_once_with(ANY)
+        self.assertTrue(mock_sh.rm.called)
+        mock_post_requests.assert_called_once_with(
+            message.data["url"],
+            files={filename: ANY},
+            headers=message.data["headers"],
+            verify=False
+        )
 
 
 if __name__ == "__main__":
