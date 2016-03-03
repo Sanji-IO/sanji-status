@@ -1,0 +1,232 @@
+swagger: '2.0'
+
+info:
+  title: System status API
+  description: System status information
+  version: '0.0.1'
+
+schemes:
+- http
+- https
+
+produces:
+- application/json
+
+paths:
+  /system/status:
+    get:
+      description: Get system status
+      responses:
+        200:
+          description: success
+          schema:
+            $ref: '#/definitions/SystemStatus'
+          examples:
+            {
+              "application/json": {
+                $ref: '#/externalDocs/x-mocks/SystemStatusExample'
+              }
+            }
+    put:
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/SystemStatus'
+      description: Update hostname
+      responses:
+        200:
+          description: success
+          schema:
+            $ref: '#/definitions/SystemStatus'
+          examples:
+            {
+              "application/json": {
+                $ref: '#/externalDocs/x-mocks/SystemStatusExample'
+              }
+            }
+
+  /system/reboot:
+    post:
+      description: 'Reboot system (delay: 3 sec)'
+      responses:
+        200:
+          description: success
+
+  /system/syslog:
+    post:
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/UrlInfo'
+      description: Uplaod system logs to remote server
+      responses:
+        200:
+          description: sucess
+          schema:
+            $ref: '#/definitions/UrlInfo'
+          examples:
+            {
+              "application/json": {
+                "url": "https://www.google.com"
+              }
+            }
+
+  /network/interfaces:
+    get:
+      description: Get network interfaces
+      responses:
+        200:
+          description: success
+          schema:
+            $ref: '#/definitions/NetworkInterfaces'
+          examples:
+            {
+              "application/json": {
+                $ref: '#/externalDocs/x-mocks/NetworkInterfacesExample'
+              }
+            }
+
+definitions:
+  SystemStatus:
+    description: System status
+    type: object
+    properties:
+      hostname:
+        description: Hostname
+        type: string
+        minLength: 1
+        maxLength: 255
+        pattern: '[^a-zA-Z\d\-]'
+      version:
+        description: Version of system
+        type: string
+        readOnly: true
+      uptimeSec:
+        description: 'System uptime (unit: seconds)'
+        type: string
+        readOnly: true
+      memory:
+        description: 'System memory usage status (unit: byte)'
+        type: integer
+        readOnly: true
+      disks:
+        type: array
+        readOnly: true
+        items:
+          $ref: '#/definitions/Disk'
+    example:
+      $ref: '#/externalDocs/x-mocks/SystemStatusExample'
+
+  Disk:
+    description: Disk information
+    type: object
+    readOnly: true
+    properties:
+      name:
+        description: Disk alias
+        type: string
+        readOnly: true
+      mount:
+        description: Mount point
+        type: string
+        readOnly: true
+      device:
+        description: Physical device node path
+        type: string
+        readOnly: true
+      usage:
+        description: Usage of this disk
+        type: object
+        readOnly: true
+        properties:
+          total:
+            description: 'Total size (unit: byte)'
+            type: integer
+            readOnly: true
+          used:
+            description: 'Used size (unit: byte)'
+            type: integer
+            readOnly: true
+          free:
+            description: 'Free size (unit: byte)'
+            type: integer
+            readOnly: true
+          percent:
+            description: 'Percent of used size'
+            type: number
+            readOnly: true
+
+  NetworkInterfaces:
+    description: Network Interfaces
+    type: array
+    items:
+      type: string
+    example:
+      $ref: '#/externalDocs/x-mocks/UrlInfoExample'
+
+  UrlInfo:
+    description: Url information
+    type: object
+    required:
+    - url
+    properties:
+      url:
+        description: Url address
+        type: string
+        minLength: 1
+        maxLength: 4096
+      headers:
+        description: Headers
+        type: object
+    example:
+      $ref: '#/externalDocs/x-mocks/UrlInfoExample'
+
+externalDocs:
+  url: '#'
+  x-mocks:
+    SystemStatusExample:
+      {
+        "hostname": "Moxa",
+        "version": "1.1.0-1",
+        "uptimeSec": 312956,
+        "memory": 257286144,
+        "disks": [
+          {
+            "name": "system",
+            "mount": "/",
+            "device": "rootfs",
+            "usage": {
+              "total": 770695168,
+              "used": 497655808,
+              "free": 217038848,
+              "percent": 64.6
+            }
+          },
+          {
+            "name": "sd1",
+            "mount": "/media/sd-mmcblk1p1",
+            "device": "/dev/mmcblk1p1",
+            "usage": {
+              "total": 770695168,
+              "used": 497655808,
+              "free": 217038848,
+              "percent": 64.6
+            }
+          }
+        ]
+      }
+
+    UrlInfoExample:
+      {
+        "url": "https://server/upload",
+        "headers": {
+          "accessToken": "MOXAMOXA-TEST-SYSTEM"
+        }
+      }
+
+    NetworkInterfacesExample:
+      ["tunl0","eth0","eth1"]

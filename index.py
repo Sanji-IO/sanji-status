@@ -7,7 +7,7 @@ import sh
 import requests
 import datetime
 import status
-
+from time import sleep
 from sanji.core import Sanji
 from sanji.core import Route
 from sanji.connection.mqtt import Mqtt
@@ -77,6 +77,12 @@ class Index(Sanji):
                 code=500, data={"message": "Can't get file link."})
 
         return response(data={"url": resp["url"]})
+
+    @Route(methods="post", resource="/system/reboot")
+    def post_reboot(self, message, response):
+        response()
+        sleep(3)
+        self.status.reboot()
 
 if __name__ == '__main__':
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'

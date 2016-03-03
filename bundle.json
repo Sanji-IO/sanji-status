@@ -28,6 +28,10 @@
     {
       "methods": "get",
       "resource": "/network/interfaces"
+    },
+    {
+      "methods": "post",
+      "resource": "/system/reboot"
     }
   ]
 }
