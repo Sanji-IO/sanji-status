@@ -195,6 +195,9 @@ class Status(Model):
             disks.append(disk)
         return disks
 
+    def reboot(self):
+        _logger.info("Rebooting...")
+        sh.reboot()
 
 if __name__ == '__main__':
     path_root = os.path.dirname(os.path.abspath(__file__)) + "/../"
