@@ -3,7 +3,7 @@ swagger: '2.0'
 info:
   title: System status API
   description: System status information
-  version: '0.0.1'
+  version: '0.0.2'
 
 schemes:
 - http
@@ -99,8 +99,8 @@ definitions:
         description: Hostname
         type: string
         minLength: 1
-        maxLength: 255
-        pattern: '[^a-zA-Z\d\-]'
+        maxLength: 63
+        pattern: '/^(?![0-9]+$)(?!.*-$)(?!-)[a-zA-Z0-9-]{1,63}$/'
       version:
         description: Version of system
         type: string
