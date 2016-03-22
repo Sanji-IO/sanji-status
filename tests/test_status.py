@@ -3,16 +3,9 @@
 
 import os
 import sys
-import sh
 import logging
 import unittest
-import requests
 from mock import patch
-from mock import Mock
-from mock import ANY
-
-from sanji.connection.mockup import Mockup
-from sanji.message import Message
 
 try:
     sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
@@ -27,38 +20,19 @@ except ImportError as e:
 
 dirpath = os.path.dirname(os.path.realpath(__file__))
 
-PKG_STATUS = "\
-        Package: uc8100-mxcloud-cg \
-        Status: install ok installed \
-        Priority: extra \
-        Section: utils \
-        Installed-Size: 62 \
-        Maintainer: Aeluin Chen <aeluin_chen@moxa.com> \
-        Architecture: all \
-        Source: mxcloud \
-        Version: 0.1.2-1 \
-        Depends: sanji-bundle-bootstrap, sanji-bundle-cellular, \
-sanji-bundle-dns, sanji-bundle-ethernet, sanji-bundle-firmware, \
-sanji-bundle-import-export, sanji-bundle-reboot, sanji-bundle-route, \
-sanji-bundle-status, sanji-bundle-time, sanji-controller \
-        Conffiles: \
-         /etc/init.d/uc8100-mxcloud-cg df7aab4b91d6b2e3d3439a8e82cdcdd7 \
-          /etc/default/uc8100-mxcloud-cg a02f25446f618b44ae180609eb8d0290 \
-          Description: mxcloud package for Moxa cloud gateway on UC-8100-LX \
-          Homepage: http://www.moxa.com"
+PVERSION_INFO = "UC-8112-LX-CG version 1.1 Build 12345678"
+VERSION_INFO = "1.1 Build 12345678"
 
 
 class TestStatusClass(unittest.TestCase):
 
-    @patch("sh.grep")
-    @patch("sh.dpkg")
-    def setUp(self, mock_dpkg, mock_grep):
+    @patch("status.sh")
+    def setUp(self, mock_sh):
+        self.root_path = os.path.abspath(os.path.dirname(__file__) + "/../")
         self.name = "status"
-        self.bundle = Status(connection=Mockup())
-        self.bundle.product = "uc8100-mxcloud-cg"
+        self.bundle = Status(name="status", path=self.root_path)
 
     def tearDown(self):
-        self.bundle.stop()
         self.bundle = None
         try:
             os.remove("%s/data/%s.json" % (dirpath, self.name))
@@ -69,26 +43,6 @@ class TestStatusClass(unittest.TestCase):
             os.remove("%s/data/%s.json.backup" % (dirpath, self.name))
         except OSError:
             pass
-
-    @patch("sh.dpkg")
-    @patch("sh.grep")
-    def test__init(self, mock_grep, mock_dpkg):
-        """
-        init
-        """
-        mock_grep.return_value = \
-            "uc8100-mxcloud-cg install"
-        self.bundle.init()
-        self.assertEqual(self.bundle.product, "uc8100-mxcloud-cg")
-
-    @patch("sh.dpkg")
-    def test__init_cannot_get_product(self, mock_dpkg):
-        """
-        init: cannot get product name
-        """
-        mock_dpkg.side_effect = sh.ErrorReturnCode_1
-        self.bundle.init()
-        self.assertEqual(self.bundle.product, None)
 
     @patch("socket.gethostname")
     def test__get_hostname(self, mock_gethostname):
@@ -126,56 +80,25 @@ class TestStatusClass(unittest.TestCase):
         with self.assertRaises(OSError):
             self.bundle.set_hostname("test")
 
-    @patch("sh.dpkg")
-    def test__get_product_version(self, mock_dpkg):
+    @patch("status.sh")
+    def test__get_product_version(self, mock_sh):
         """
         get_product_version
         """
-        mock_dpkg.return_value = PKG_STATUS
+        mock_sh.pversion.return_value = PVERSION_INFO
         version = self.bundle.get_product_version()
-        self.assertEqual("0.1", version)
+        self.assertEqual(VERSION_INFO, version)
 
-    @patch("sh.dpkg")
-    def test__get_product_version__failed(self, mock_dpkg):
+    @patch("status.sh")
+    def test__get_product_version__failed(self, mock_sh):
         """
         get_product_version: failed
         """
-        mock_dpkg.side_effect = OSError
+        mock_sh.pversion.side_effect = OSError
         version = self.bundle.get_product_version()
         self.assertEqual("(not installed)", version)
 
-    @patch.object(Status, "get_product_version")
-    @patch.object(Status, "get_hostname")
-    def test__get(self, mock_gethostname, mock_getversion):
-        """
-        get
-        """
-        mock_gethostname.return_value = "moxa"
-        mock_getversion.return_value = "0.1.2-1"
-        message = Message({"data": {}, "query": {}, "param": {}})
-
-        def resp(code=200, data=None):
-            self.assertEqual(200, code)
-            self.assertEqual("0.1.2-1", data["version"])
-        self.bundle.get_status(message=message, response=resp, test=True)
-
-    @patch.object(Status, "set_hostname")
-    def test__put(self, mock_sethostname):
-        """
-        put
-        "data": {
-            "hostname": "test"
-        }
-        """
-        message = Message({"data": {}, "query": {}, "param": {}})
-        message.data["hostname"] = "test"
-
-        def resp(code=200, data=None):
-            self.assertEqual(200, code)
-            self.assertEqual("test", data["hostname"])
-        self.bundle.put_status(message=message, response=resp, test=True)
-        self.assertEqual("test", self.bundle.model.db["hostname"])
-
+    '''
     @patch("status.tar_syslog_files")
     @patch("status.requests.post")
     @patch("status.sh")
@@ -218,6 +141,7 @@ class TestStatusClass(unittest.TestCase):
             headers=message.data["headers"],
             verify=False
         )
+    '''
 
 if __name__ == "__main__":
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
