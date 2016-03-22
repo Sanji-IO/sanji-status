@@ -1,0 +1,98 @@
+sanji-bundle-status (0.9.16-1) unstable; urgency=low
+
+  * Update: Product version from x.x.x to x.x .
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Wed, 28 Oct 2015 14:15:49 +0800
+
+sanji-bundle-status (0.9.15-1) unstable; urgency=low
+
+  * Bugfix: hostname will rollback to old one after reboot.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Thu, 22 Oct 2015 14:03:40 +0800
+
+sanji-bundle-status (0.9.14-1) unstable; urgency=low
+
+  * Feature: add syslog download function
+
+ -- YuLun Shih <zackyl.shih@moxa.com>  Tue, 06 Oct 2015 14:16:02 +0800
+
+sanji-bundle-status (0.9.13-1) unstable; urgency=low
+
+  * Bugfix: `dpkg -l` cannot retrieve full package name in console, that will
+    cause version cannot be fetched.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 15 Sep 2015 19:35:37 +0800
+
+sanji-bundle-status (0.9.12-1) unstable; urgency=low
+
+  * Add 5% on disk usage; filesystems reserve 5% space for use only the root
+    user.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Tue, 08 Sep 2015 09:55:15 +0800
+
+sanji-bundle-status (0.9.11-1) unstable; urgency=low
+
+  * Remove cpu, memory, and disk status
+  * Add detail information for disk usage
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Tue, 01 Sep 2015 16:40:14 +0800
+
+sanji-bundle-status (0.9.9-3) trusty; urgency=low
+
+  * Updated build-deb scripts
+
+ -- TC Huang <tc.huang@moxa.com>  Thu, 11 Jun 2015 15:38:19 +0800
+
+sanji-bundle-status (0.9.9-2) trusty; urgency=low
+
+  * Updated build-deb scripts.
+
+ -- TC Huang <tc.huang@moxa.com>  Thu, 11 Jun 2015 11:45:31 +0800
+
+sanji-bundle-status (0.9.9-1) trusty; urgency=low
+
+  * Updated /system/status/showdata interface.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 13:54:09 +0800
+
+sanji-bundle-status (0.9.8-1) trusty; urgency=low
+
+  * Fixed make install targets.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 13:16:30 +0800
+
+sanji-bundle-status (0.9.7-2) trusty; urgency=low
+
+  * Fixed installation error.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 11:56:07 +0800
+
+sanji-bundle-status (0.9.7-1) trusty; urgency=low
+
+  * Fixed CI build error.
+
+ -- TC Huang <tc.huang@moxa.com>  Tue, 09 Jun 2015 11:30:18 +0800
+
+sanji-bundle-status (0.9.6-1) trusty; urgency=low
+
+  * Updated deb-package building scripts.
+
+ -- TC Huang <tc.huang@moxa.com>  Mon, 08 Jun 2015 21:11:39 +0800
+
+sanji-bundle-status (0.9.6) UNRELEASED; urgency=low
+
+  * Updated deb-package building scripts.
+
+ -- TC Huang <tc.huang@moxa.com>  Mon, 08 Jun 2015 18:07:33 +0800
+
+sanji-bundle-status (0.9.5-1) unstable; urgency=low
+
+  * Speed up response time.
+
+ -- TC Huang <tc.huang@moxa.com>  Fri, 05 Jun 2015 14:58:03 +0800
+
+sanji-bundle-status (0.9.0) unstable; urgency=low
+
+  * Initial Release.
+
+ -- TC Huang <tc.huang@moxa.com>  Fri, 05 Jun 2015 14:49:45 +0800

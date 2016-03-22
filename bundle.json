@@ -1,0 +1,29 @@
+{
+  "name": "status",
+  "version": "0.9.16",
+  "author": "Aeluin Chen",
+  "email": "aeluin.chen@moxa.com",
+  "description": "Provide system status",
+  "license": "MOXA",
+  "main": "status.py",
+  "argument": "",
+  "priority": 25,
+  "hook": [],
+  "dependencies": {},
+  "repository": "",
+  "role": "model",
+  "ttl": 20,
+  "resources": [
+    {
+      "methods": [
+        "get",
+        "put"
+      ],
+      "resource": "/system/status"
+    },
+    {
+      "methods": "post",
+      "resource": "/system/syslog"
+    }
+  ]
+}
