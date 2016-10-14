@@ -109,8 +109,16 @@ definitions:
         description: 'System uptime (unit: seconds)'
         type: string
         readOnly: true
+      cpuUsage:
+        description: 'CPU usage (in percentage)'
+        type: number
+        readOnly: true
+      memoryUsage:
+        description: 'System memory usage (in percentage)'
+        type: number
+        readOnly: true
       memory:
-        description: 'System memory usage status (unit: byte)'
+        description: 'System total memory (unit: byte)'
         type: integer
         readOnly: true
       disks:
@@ -193,6 +201,8 @@ externalDocs:
         "hostname": "Moxa",
         "version": "1.1.0-1",
         "uptimeSec": 312956,
+        "cpuUsage": 5.7,
+        "memoryUsage": 63.8,
         "memory": 257286144,
         "disks": [
           {
