@@ -199,7 +199,8 @@ class Status(Model):
         _logger.info("Rebooting...")
         sh.reboot()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     path_root = os.path.dirname(os.path.abspath(__file__)) + "/../"
     status = Status(name="status", path=path_root)
     print status.get_hostname()

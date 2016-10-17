@@ -84,7 +84,8 @@ class Index(Sanji):
         sleep(3)
         self.status.reboot()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
     logging.basicConfig(level=0, format=FORMAT)
     _logger = logging.getLogger("status")
