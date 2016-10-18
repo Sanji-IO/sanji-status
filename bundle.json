@@ -32,6 +32,10 @@
     {
       "methods": "post",
       "resource": "/system/reboot"
+    },
+    {
+      "methods": "put",
+      "resource": "/system/password"
     }
   ]
 }

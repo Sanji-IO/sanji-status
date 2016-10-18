@@ -10,7 +10,8 @@ import re
 import tarfile
 import glob
 import netifaces
-
+from passlib.hash import sha512_crypt
+from sh import grep, cut, usermod
 from sanji.model import Model
 
 
@@ -45,6 +46,15 @@ def tar_syslog_files(output):
             tar.add(name, arcname=os.path.basename(name))
 
     return output
+
+
+def get_password(username="moxa", shadow_file="/etc/shadow"):
+    return cut(grep(username, shadow_file), "-f", 2, "-d", ":").strip()
+
+
+def set_password(password, username="moxa", salt=None):
+    hashed_password = sha512_crypt.encrypt(password, rounds=10000)
+    return usermod("-p", hashed_password, username)
 
 
 class StatusError(Exception):
