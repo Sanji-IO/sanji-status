@@ -5,11 +5,13 @@ import os
 import sys
 import logging
 import unittest
+import tempfile
 from mock import patch
 
 try:
     sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
     from status import Status
+    from status import get_password, set_password
 except ImportError as e:
     print os.path.dirname(os.path.realpath(__file__)) + '/../'
     print sys.path
@@ -98,6 +100,24 @@ class TestStatusClass(unittest.TestCase):
         version = self.bundle.get_product_version()
         self.assertEqual("(not installed)", version)
 
+    def test__get_password(self):
+        """
+        get_password
+        """
+        with tempfile.NamedTemporaryFile() as temp:
+            temp.write("moxa:$6$Hs/8c4S4$gBHEMrckbK9dpFJ0xrrO07TecyKNgTeB2Q69PKwFuuZC47W0k7zdWyF115efj9c5UmpxjB.iz.sW/QbhEYER1/:16247:0:99999:7:::")  # noqa
+            temp.flush()
+            passhash = get_password("moxa", temp.name)
+            self.assertEqual(passhash, "$6$Hs/8c4S4$gBHEMrckbK9dpFJ0xrrO07TecyKNgTeB2Q69PKwFuuZC47W0k7zdWyF115efj9c5UmpxjB.iz.sW/QbhEYER1/")  # noqa
+
+    @patch("status.usermod")
+    def test__set_password(self, mock_usermod):
+        """
+        set_password
+        """
+        set_password("moxa", "user")
+        mock_usermod.called_args
+        self.assertTrue(mock_usermod.called)
     '''
     @patch("status.tar_syslog_files")
     @patch("status.requests.post")
@@ -142,6 +162,7 @@ class TestStatusClass(unittest.TestCase):
             verify=False
         )
     '''
+
 
 if __name__ == "__main__":
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'

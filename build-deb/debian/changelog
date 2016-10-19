@@ -1,3 +1,9 @@
+sanji-bundle-status (0.12.0-1) unstable; urgency=low
+
+  * feat: support change system password.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Tue, 18 Oct 2016 11:43:17 +0800
+
 sanji-bundle-status (0.11.0-1) unstable; urgency=low
 
   * Add OpenAPI doc.

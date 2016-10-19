@@ -7,6 +7,7 @@ import sh
 import requests
 import datetime
 import status
+from status import set_password
 from time import sleep
 from sanji.core import Sanji
 from sanji.core import Route
@@ -23,6 +24,10 @@ class Index(Sanji):
 
     HOSTNAME_SCHEMA = Schema({
         Required("hostname"): All(Any(unicode, str), Length(1, 255))
+    }, extra=REMOVE_EXTRA)
+
+    PASSWORD_SCHEMA = Schema({
+        Required("password"): All(Any(unicode, str), Length(1, 255))
     }, extra=REMOVE_EXTRA)
 
     def init(self, *args, **kwargs):
@@ -83,6 +88,11 @@ class Index(Sanji):
         response()
         sleep(3)
         self.status.reboot()
+
+    @Route(methods="put", resource="/system/password", schema=PASSWORD_SCHEMA)
+    def post_passwd(self, message, response):
+        set_password(message.data["password"])
+        return response()
 
 
 if __name__ == "__main__":
