@@ -14,6 +14,8 @@ from passlib.hash import sha512_crypt
 from sh import grep, cut, usermod
 from sanji.model import Model
 
+from collectd import Collectd
+
 
 _logger = logging.getLogger("sanji.status")
 HOSTNAME_REGEX = re.compile("[^a-zA-Z\d\-]")
@@ -130,6 +132,34 @@ class Status(Model):
         except Exception as e:
             _logger.error("Cannot get interfaces: %s" % e)
             return []
+
+    def _parse_collectd_value(self, value):
+        if len(value) != 1:
+            return 0.0
+        else:
+            return value[0].split('=')[1]
+
+    def get_cpu_usage(self):
+        clt = Collectd()
+
+        # TODO: VAL only for UC-8100/UC-8100-ME
+        value = clt.get('localhost/cpu-0/cpu-user')
+        cpu_user = float(self._parse_collectd_value(value))
+        value = clt.get('localhost/cpu-0/cpu-system')
+        cpu_sys = float(self._parse_collectd_value(value))
+
+        usage = cpu_user + cpu_sys
+        return usage if usage <= 100.0 else 100.0
+
+    def get_memory_usage(self):
+        clt = Collectd()
+
+        # TODO: VAL only for UC-8100/UC8100-ME
+        value = clt.get('localhost/memory/memory-used')
+        memory_used = float(self._parse_collectd_value(value))
+
+        usage = memory_used * 100.0 / self.get_memory()
+        return usage if usage <= 100.0 else 100.0
 
     def get_memory(self):
         return psutil.virtual_memory().total

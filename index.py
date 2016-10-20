@@ -41,6 +41,8 @@ class Index(Sanji):
                 "hostname": self.status.get_hostname(),
                 "version": self.status.get_product_version(),
                 "uptimeSec": self.status.get_uptime(),
+                "cpuUsage": self.status.get_cpu_usage(),
+                "memoryUsage": self.status.get_memory_usage(),
                 "memory": self.status.get_memory(),
                 "disks": self.status.get_disks()
             }

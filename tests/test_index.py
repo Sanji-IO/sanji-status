@@ -47,16 +47,21 @@ class TestIndexClass(unittest.TestCase):
 
     @patch.object(status, "get_disks")
     @patch.object(status, "get_memory")
+    @patch.object(status, "get_memory_usage")
+    @patch.object(status, "get_cpu_usage")
     @patch.object(status, "get_uptime")
     @patch.object(status, "get_product_version")
     @patch.object(status, "get_hostname")
     def test__get_status(
-        self, mock_hostname, mock_version, mock_uptime, mock_memory,
+        self, mock_hostname, mock_version, mock_uptime,
+            mock_cpu_usage, mock_memory_usage, mock_memory,
             mock_disks):
         """test__get_status: Get system status"""
         mock_hostname.return_value = "Moxa"
         mock_version.return_value = "1.1"
         mock_uptime.return_value = 181499
+        mock_cpu_usage.return_value = 98.7
+        mock_memory_usage.return_value = 16.8
         mock_memory.return_value = 257286144
         mock_disks.return_value = []
         resp = Mock()
@@ -66,6 +71,8 @@ class TestIndexClass(unittest.TestCase):
                 "hostname": mock_hostname.return_value,
                 "version": mock_version.return_value,
                 "uptimeSec": mock_uptime.return_value,
+                "cpuUsage": mock_cpu_usage.return_value,
+                "memoryUsage": mock_memory_usage.return_value,
                 "memory": mock_memory.return_value,
                 "disks": mock_disks.return_value})
 
