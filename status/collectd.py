@@ -32,9 +32,6 @@ class Collectd(object):
     def _command(self, command):
         self._sock.send(command + '\n')
         rtn = string.split(self._readline())
-        if len(rtn) != 1:
-            return False
-
         status = int(rtn[0])
         if status:
             return status
