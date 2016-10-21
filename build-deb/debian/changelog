@@ -1,3 +1,10 @@
+sanji-bundle-status (0.13.1-1) unstable; urgency=low
+
+  * fix: add file when build deb package
+  * fix: fix for collectd unixsocket communication
+
+ -- Donald Hsu <donald.hsu@moxa.com>  Fri, 21 Oct 2016 11:59:48 +0800
+
 sanji-bundle-status (0.13.0-1) unstable; urgency=low
 
   * feat: add cpuUsage and memoryUsage
