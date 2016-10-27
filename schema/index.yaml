@@ -108,19 +108,15 @@ paths:
       description: Get system properties
       responses:
         200:
+          schema:
+            $ref: '#/definitions/SystemProperties'
           description: success
-
-    put:
-      description: Update system properties
-      parameters:
-      - name: body
-        in: body
-        required: true
-        schema:
-          $ref: '#/definitions/SystemProperties'
-      responses:
-        200:
-          description: success
+          examples:
+            {
+              "application/json": {
+                $ref: '#/externalDocs/x-mocks/SystemPropertiesExample'
+              }
+            }
 
   /system/properties/{key}:
     parameters:
@@ -152,9 +148,7 @@ paths:
         in: body
         required: true
         schema:
-          allOf:
-          - $ref: '#/definitions/SystemProperties/properties/aliasName'
-          - $ref: '#/definitions/SystemProperties/properties/gps'
+          $ref: '#/definitions/SystemPropertiesUpdate'
       responses:
         200:
           description: success
@@ -311,6 +305,19 @@ definitions:
     example:
       $ref: '#/externalDocs/x-mocks/SystemPropertiesExample'
 
+  SystemPropertiesUpdate:
+    description: Request payload for updating system property
+    type: object
+    required:
+    - data
+    properties:
+      data:
+        type: object
+        allOf:
+        - $ref: '#/definitions/SystemProperties/properties/aliasName'
+        - $ref: '#/definitions/SystemProperties/properties/gps'
+    example:
+      $ref: '#/externalDocs/x-mocks/SystemPropertiesUpdateExample'
 
 externalDocs:
   url: '#'
@@ -370,4 +377,12 @@ externalDocs:
           "lng": 22.456
         },
         "aliasName": "my iot gateway"
+      }
+
+    SystemPropertiesUpdateExample:
+      {
+        "data": {
+          "lat": 121.123,
+          "lng": 22.456
+        }
       }
