@@ -36,6 +36,14 @@
     {
       "methods": "put",
       "resource": "/system/password"
+    },
+    {
+      "methods": "get",
+      "resource": "/system/properties"
+    },
+    {
+      "methods": ["get", "put"],
+      "resource": "/system/properties/:key"
     }
   ]
 }
