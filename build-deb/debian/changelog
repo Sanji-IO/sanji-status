@@ -1,3 +1,9 @@
+sanji-bundle-status (0.13.0-1) unstable; urgency=low
+
+  * feat: add system/properties endpoint.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Thu, 27 Oct 2016 15:08:41 +0800
+
 sanji-bundle-status (0.12.0-1) unstable; urgency=low
 
   * feat: support change system password.
