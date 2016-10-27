@@ -103,6 +103,68 @@ paths:
         200:
           description: success
 
+  /system/properties:
+    get:
+      description: Get system properties
+      responses:
+        200:
+          description: success
+
+    put:
+      description: Update system properties
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/SystemProperties'
+      responses:
+        200:
+          description: success
+
+  /system/properties/{key}:
+    parameters:
+    - name: key
+      in: path
+      type: string
+      required: true
+
+    get:
+      description: Get specific system property
+      responses:
+        200:
+          schema:
+            allOf:
+            - $ref: '#/definitions/SystemProperties/properties/aliasName'
+            - $ref: '#/definitions/SystemProperties/properties/gps'
+          description: success
+          examples:
+            {
+              "application/json": {
+                $ref: '#/externalDocs/x-mocks/SystemPropertiesExample/gps'
+              }
+            }
+
+    put:
+      description: Update specific system property
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          allOf:
+          - $ref: '#/definitions/SystemProperties/properties/aliasName'
+          - $ref: '#/definitions/SystemProperties/properties/gps'
+      responses:
+        200:
+          description: success
+          examples:
+            {
+              "application/json": {
+                $ref: '#/externalDocs/x-mocks/SystemPropertiesExample/gps'
+              }
+            }
+
 definitions:
   SystemStatus:
     description: System status
@@ -220,6 +282,36 @@ definitions:
     example:
       $ref: '#/externalDocs/x-mocks/SystemPasswordExample'
 
+  SystemProperties:
+    description: System Properties
+    type: object
+    properties:
+      aliasName:
+        description: Alias name of this device
+        type: string
+        maxLength: 255
+        default: 'MOXA IoT Gateway'
+      gps:
+        description: GPS location information
+        type: object
+        required:
+        - lat
+        - lng
+        properties:
+          lat:
+            type: number
+            format: float
+            description: latitude
+            default: 0
+          lng:
+            type: number
+            format: float
+            description: longitude
+            default: 0
+    example:
+      $ref: '#/externalDocs/x-mocks/SystemPropertiesExample'
+
+
 externalDocs:
   url: '#'
   x-mocks:
@@ -270,3 +362,12 @@ externalDocs:
 
     SystemPasswordExample:
       {"passowrd": "thisisyourpassword"}
+
+    SystemPropertiesExample:
+      {
+        "gps": {
+          "lat": 121.123,
+          "lng": 22.456
+        },
+        "aliasName": "my iot gateway"
+      }
