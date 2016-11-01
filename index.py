@@ -11,6 +11,7 @@ from status import set_password
 from time import sleep
 from sanji.core import Sanji
 from sanji.core import Route
+from sanji.model_initiator import ModelInitiator
 from sanji.connection.mqtt import Mqtt
 
 from voluptuous import Schema
@@ -30,9 +31,27 @@ class Index(Sanji):
         Required("password"): All(Any(unicode, str), Length(1, 255))
     }, extra=REMOVE_EXTRA)
 
+    GPS_SCHEMA = Schema({
+        "lat": Any(int, float),
+        "lng": Any(int, float),
+    }, extra=REMOVE_EXTRA)
+
+    ALIASNAME_SCHEMA = Schema(All(Any(unicode, str), Length(0, 255)))
+
+    PROPERTIES_SCHEMA = {
+        "aliasName": ALIASNAME_SCHEMA,
+        "gps": GPS_SCHEMA
+    }
+
+    UPDATE_PROPERTY_SCHEMA = Schema({
+        "data": Any(list, dict, str, unicode, int, float)
+    })
+
     def init(self, *args, **kwargs):
         path_root = os.path.abspath(os.path.dirname(__file__))
         self.status = status.Status(name="status", path=path_root)
+        self.properties = ModelInitiator(
+            model_name="properties", model_path=path_root)
 
     @Route(methods="get", resource="/system/status")
     def get_status(self, message, response):
@@ -95,6 +114,28 @@ class Index(Sanji):
     def post_passwd(self, message, response):
         set_password(message.data["password"])
         return response()
+
+    @Route(methods="get", resource="/system/properties")
+    def get_properties(self, message, response):
+        return response(data=self.properties.db)
+
+    @Route(methods="get", resource="/system/properties/:key")
+    def get_property(self, message, response):
+        val = self.properties.db.get(message.param["key"], None)
+        if val is None:
+            return response(code=404)
+        return response(data=val)
+
+    @Route(methods="put", resource="/system/properties/:key",
+           schema=UPDATE_PROPERTY_SCHEMA)
+    def put_property(self, message, response):
+        key = message.param["key"]
+        if key not in Index.PROPERTIES_SCHEMA:
+            return response(code=400, data={"message": "wrong key."})
+        data = Index.PROPERTIES_SCHEMA.get(key)(message.data["data"])
+        self.properties.db[key] = data
+        self.properties.save_db()
+        return response(data=self.properties.db[key])
 
 
 if __name__ == "__main__":

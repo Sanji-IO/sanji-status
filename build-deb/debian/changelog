@@ -1,3 +1,9 @@
+sanji-bundle-status (0.14.0-1) unstable; urgency=low
+
+  * feat: add system/properties endpoint.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Thu, 27 Oct 2016 15:08:41 +0800
+
 sanji-bundle-status (0.13.1-1) unstable; urgency=low
 
   * fix: add file when build deb package
