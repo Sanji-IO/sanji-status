@@ -22,6 +22,7 @@ FILES= \
 	index.py \
 	status/__init__.py \
 	status/collectd.py \
+	data/properties.json.factory \
 	data/status.json.factory
 
 INSTALL_FILES=$(addprefix $(INSTALL_DIR)/,$(FILES))
