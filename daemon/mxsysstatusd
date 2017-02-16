@@ -1,0 +1,178 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+import logging
+import collections
+import signal
+import socket
+import string
+import time
+
+import psutil
+
+from libmxidaf_py import TagV2, Tag, Time, Value
+
+_logger = logging.getLogger("mxsysstatud")
+
+
+def _parse_collectd_value(value):
+    if len(value) != 1:
+        return 0.0
+    else:
+        return value[0].split('=')[1]
+
+
+def get_cpu_usage():
+    clt = Collectd()
+
+    # TODO: VAL only for UC-8100/UC-8100-ME
+    value = clt.get('localhost/cpu-0/cpu-user')
+    cpu_user = float(_parse_collectd_value(value))
+    value = clt.get('localhost/cpu-0/cpu-system')
+    cpu_sys = float(_parse_collectd_value(value))
+
+    usage = cpu_user + cpu_sys
+    return usage if usage <= 100.0 else 100.0
+
+
+def get_memory_usage():
+    clt = Collectd()
+
+    # TODO: VAL only for UC-8100/UC8100-ME
+    value = clt.get('localhost/memory/memory-used')
+    memory_used = float(_parse_collectd_value(value))
+
+    usage = memory_used * 100.0 / get_memory()
+    return usage if usage <= 100.0 else 100.0
+
+
+def get_memory():
+    return psutil.virtual_memory().total
+
+def get_disk_usage():
+    disk_usage = psutil.disk_usage('/')
+    return disk_usage.percent
+
+
+class LoopStopException(Exception):
+    pass
+
+
+class Collectd(object):
+
+    UNIX_SOCKET_PATH = '/var/run/collectd.sock'
+
+    def __init__(self, path=UNIX_SOCKET_PATH):
+        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._path = path
+        self._sock.connect(self._path)
+
+    def __del__(self):
+        self._sock.close()
+
+    def get(self, key, flush=True):
+        num = self._command('GETVAL "' + key + '"')
+        lines = []
+        if num:
+            lines = self._readlines(num)
+        if flush:
+            self._command('FLUSH identifier="' + key + '"')
+        return lines
+
+    def _command(self, command):
+        self._sock.send(command + '\n')
+        rtn = string.split(self._readline())
+        status = int(rtn[0])
+        if status:
+            return status
+
+        return False
+
+    def _readline(self):
+        data = ''
+        buf = []
+        while data != '\n':
+            data = self._sock.recv(1)
+            if not data:
+                break
+            if data != '\n':
+                buf.append(data)
+        return ''.join(buf)
+
+    def _readlines(self, lens=0):
+        total = 0
+        lines = []
+        while True:
+            line = self._readline()
+            if not line:
+                break
+            lines.append(line)
+            total = len(lines)
+            if lens and total >= lens:
+                break
+        return lines
+
+
+class VQueue(object):
+
+    def __init__(self, qsize):
+        self.queue = collections.deque([], qsize)
+
+    def push(self, value):
+            self.queue.append(value)
+
+    def avg(self):
+        summary = 0.0
+        for v in self.queue:
+            summary += v
+        return summary / len(self.queue)
+
+
+if __name__ == '__main__':
+    cpu_queue = VQueue(10)
+    mem_queue = VQueue(10)
+    disk_queue = VQueue(10)
+
+    tagv2 = TagV2.instance()
+
+    def stop_handler(signum, frame):
+        raise LoopStopException
+
+    signal.signal(signal.SIGINT, stop_handler)
+    signal.signal(signal.SIGTERM, stop_handler)
+
+    while True:
+        try:
+            cpu_queue.push(get_cpu_usage())
+            mem_queue.push(get_memory_usage())
+            disk_queue.push(get_disk_usage())
+            tagv2.publish(
+                "SYSTEM",
+                "cpu_usage",
+                Tag(
+                    Value(cpu_queue.avg()),
+                    Time.now(),
+                    ""
+                )
+            )
+            tagv2.publish(
+                "SYSTEM",
+                "memory_usage",
+                Tag(
+                    Value(mem_queue.avg()),
+                    Time.now(),
+                    ""
+                )
+            )
+            tagv2.publish(
+                "SYSTEM",
+                "disk_usage",
+                Tag(
+                    Value(disk_queue.avg()),
+                    Time.now(),
+                    ""
+                )
+            )
+            time.sleep(1)
+        except LoopStopException:
+            break
