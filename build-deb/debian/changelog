@@ -1,3 +1,9 @@
+sanji-bundle-status (0.14.2-1) unstable; urgency=low
+
+  * fix: add remove extra for aliasName.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Tue, 21 Feb 2017 15:14:04 +0800
+
 sanji-bundle-status (0.14.1-1) unstable; urgency=low
 
   * fix: add missing file.
