@@ -44,6 +44,10 @@
     {
       "methods": ["get", "put"],
       "resource": "/system/properties/:key"
+    },
+    {
+      "methods": "get",
+      "resource": "/mxc/system/equipments"
     }
   ]
 }

@@ -137,6 +137,38 @@ class Index(Sanji):
         self.properties.save_db()
         return response(data=self.properties.db[key])
 
+    @Route(methods="get", resource="/mxc/system/equipments")
+    def get_system_equipments(self, message, response):
+        equs = [
+            {
+                "equipmentName": "SYSTEM",
+                "equipmentTags": [
+                    {
+                        "name": "cpu_usage",
+                        "dataType": "float64",
+                        "access": "ro",
+                        "size": 8,
+                        "description": "CPU Usage"
+                    },
+                    {
+                        "name": "memory_usage",
+                        "dataType": "float64",
+                        "access": "ro",
+                        "size": 8,
+                        "description": "Memory Usage"
+                    },
+                    {
+                        "name": "disk_usage",
+                        "dataType": "float64",
+                        "access": "ro",
+                        "size": 8,
+                        "description": "Disk Usage"
+                    }
+                ]
+            }
+        ]
+        return response(data=equs)
+
 
 if __name__ == "__main__":
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
