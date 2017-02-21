@@ -45,7 +45,7 @@ class Index(Sanji):
 
     UPDATE_PROPERTY_SCHEMA = Schema({
         "data": Any(list, dict, str, unicode, int, float)
-    })
+    }, extra=REMOVE_EXTRA)
 
     def init(self, *args, **kwargs):
         path_root = os.path.abspath(os.path.dirname(__file__))
