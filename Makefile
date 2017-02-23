@@ -21,7 +21,7 @@ FILES= \
 	requirements.txt \
 	index.py \
 	status/__init__.py \
-	status/collectd.py \
+	daemon/mxsysstatusd \
 	data/properties.json.factory \
 	data/status.json.factory
 

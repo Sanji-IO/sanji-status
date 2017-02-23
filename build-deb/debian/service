@@ -1,0 +1,10 @@
+[Unit]
+Description=Moxa System Status Daemon
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/mxsysstatusd
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
