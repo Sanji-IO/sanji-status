@@ -16,7 +16,7 @@ DEB_PYPDIR  := $(DEB_DESTDIR)/tmp/$(DEB_PACKAGE)-packages
 
 
 %:
-	dh $@
+	dh $@ --with systemd
 
 override_dh_auto_test:
 

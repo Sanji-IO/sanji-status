@@ -1,3 +1,9 @@
+sanji-bundle-status (0.15.0-1) unstable; urgency=low
+
+  * feat: add mxsysstatusd to report system tags
+
+ -- Donald Hsu <donald.hsu@moxa.com>  Thu, 23 Feb 2017 15:53:35 +0800
+
 sanji-bundle-status (0.14.2-1) unstable; urgency=low
 
   * fix: add remove extra for aliasName.

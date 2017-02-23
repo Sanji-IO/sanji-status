@@ -1,18 +1,18 @@
 Source: sanji-bundle-status
 Priority: extra
 Maintainer: TC Huang <tc.huang@moxa.com>
-Build-Depends: debhelper (>= 8.0.0)
+Build-Depends: debhelper (>= 8.0.0), dh-systemd
 Build-Depends-Indep: python (>= 2.7)
 Standards-Version: 3.9.3
 Section: libs
 Homepage: http://www.moxa.com
-#Vcs-Git: 
-#Vcs-Browser: 
+#Vcs-Git:
+#Vcs-Browser:
 X-Python-Version: >= 2.5
 
 Package: sanji-bundle-status
 Section: libs
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, python2.7, python-pip, python-dev
+Depends: ${shlibs:Depends}, ${misc:Depends}, python2.7, python-pip, python-dev, libmxidaf-py
 Description: Provide system status
 

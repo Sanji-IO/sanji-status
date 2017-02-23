@@ -156,6 +156,19 @@ paths:
             {
               "application/json": {
                 $ref: '#/externalDocs/x-mocks/SystemPropertiesExample/gps'
+
+  /mxc/system/equipments:
+    get:
+      description: Get system tag information
+      responses:
+        200:
+          description: success
+          schema:
+            $ref: '#/definitions/Equipments'
+          examples:
+            {
+              "application/json": {
+                $ref: '#/externalDocs/x-mocks/EquipmentsExample'
               }
             }
 
@@ -319,6 +332,68 @@ definitions:
     example:
       $ref: '#/externalDocs/x-mocks/SystemPropertiesUpdateExample'
 
+  Equipments:
+    description: system tags
+    type: array
+    items:
+      type: object
+      required:
+      - equipmentName
+      - equipmentTags
+      properties:
+        equipmentName:
+          description: equipment name of tags
+          type: string
+          minLength: 3
+          maxLength: 255
+        equipmentTags:
+          description: list of tags
+          type: array
+          items:
+            type: object
+            required:
+            - name
+            - dataType
+            - access
+            - size
+            - description
+            properties:
+              name:
+                description: Name of tag
+                type: string
+                minLength: 1
+                maxLength: 255
+              dataType:
+                description: Data type of tag
+                type: string
+                enum:
+                - boolean
+                - uint16
+                - uint32
+                - uint64
+                - int16
+                - int32
+                - int64
+                - float32
+                - float64
+                - string
+                - bytearray
+              access:
+                description: Access type of tag
+                type: string
+                enum:
+                - ro
+                - wo
+                - rw
+              size:
+                description: Size of tag in byte
+                type: integer
+              description:
+                description: Description of tag
+                type: string
+                minLength: 0
+                maxLength: 4096
+
 externalDocs:
   url: '#'
   x-mocks:
@@ -386,3 +461,33 @@ externalDocs:
           "lng": 22.456
         }
       }
+
+    EquipmentsExample:
+      [
+        {
+          "equipmentName": "SYSTEM",
+          "equipmentTags": [
+            {
+              "name": "cpu_usage",
+               "dataType": "float64",
+               "access": "ro",
+               "size": 8,
+               "description": "CPU Usage"
+            },
+            {
+               "name": "memory_usage",
+               "dataType": "float64",
+               "access": "ro",
+               "size": 8,
+               "description": "Memory Usage"
+            },
+            {
+               "name": "disk_usage",
+               "dataType": "float64",
+               "access": "ro",
+               "size": 8,
+               "description": "Disk Usage"
+            }
+          ]
+        }
+      ]
