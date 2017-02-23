@@ -14,7 +14,7 @@ from passlib.hash import sha512_crypt
 from sh import grep, cut, usermod
 from sanji.model import Model
 
-from collectd import Collectd
+from libmxidaf_py import TagV2
 
 
 _logger = logging.getLogger("sanji.status")
@@ -63,7 +63,41 @@ class StatusError(Exception):
     pass
 
 
+class SysStatus(object):
+
+    def __init__(self):
+        self._tagv2 = TagV2.instance()
+        self._cpu_usage = 0.0
+        self._memory_usage = 0.0
+
+    def _on_tag_callback(self, equipment_name, tag_name, tag):
+        if equipment_name == "SYSTEM":
+            if tag_name == "cpu_usage":
+                self._cpu_usage = tag.value().as_float()
+            elif tag_name == "memory_usage":
+                self._memory_usage = tag.value().as_float()
+
+    def run(self):
+        self._tagv2.subscribe_callback(self._on_tag_callback)
+        self._tagv2.subscribe("SYSTEM", "cpu_usage")
+        self._tagv2.subscribe("SYSTEM", "memory_usage")
+
+    @property
+    def cpu_usage(self):
+        return self._cpu_usage
+
+    @property
+    def memory_usage(self):
+        return self._memory_usage
+
+
 class Status(Model):
+
+    def __init__(self, *args, **kwargs):
+        super(Status, self).__init__(*args, **kwargs)
+
+        self.sysstatus = SysStatus()
+        self.sysstatus.run()
 
     def get_hostname(self):
         """Get hostname
@@ -140,26 +174,10 @@ class Status(Model):
             return value[0].split('=')[1]
 
     def get_cpu_usage(self):
-        clt = Collectd()
-
-        # TODO: VAL only for UC-8100/UC-8100-ME
-        value = clt.get('localhost/cpu-0/cpu-user')
-        cpu_user = float(self._parse_collectd_value(value))
-        value = clt.get('localhost/cpu-0/cpu-system')
-        cpu_sys = float(self._parse_collectd_value(value))
-
-        usage = cpu_user + cpu_sys
-        return usage if usage <= 100.0 else 100.0
+        return self.sysstatus.cpu_usage
 
     def get_memory_usage(self):
-        clt = Collectd()
-
-        # TODO: VAL only for UC-8100/UC8100-ME
-        value = clt.get('localhost/memory/memory-used')
-        memory_used = float(self._parse_collectd_value(value))
-
-        usage = memory_used * 100.0 / self.get_memory()
-        return usage if usage <= 100.0 else 100.0
+        return self.sysstatus.memory_usage
 
     def get_memory(self):
         return psutil.virtual_memory().total
