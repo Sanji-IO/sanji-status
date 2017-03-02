@@ -156,6 +156,8 @@ paths:
             {
               "application/json": {
                 $ref: '#/externalDocs/x-mocks/SystemPropertiesExample/gps'
+              }
+            }
 
   /mxc/system/equipments:
     get:
