@@ -117,10 +117,15 @@ class Status(Model):
                 hostname (str): hostname to be updated
         """
         try:
+            old_hostname = self.get_hostname()
+
             is_valid_hostname(hostname)
 
             sh.hostname("-b", hostname)
             sh.echo(hostname, _out="/etc/hostname")
+
+            # sed -i 's/ old$/ new/g' /etc/hosts
+            sh.sed("-i", "s/ {}$/ {}/g".format(old_hostname, hostname), "/etc/hosts")
             self.update(id=1, newObj={"hostname": hostname})
         except Exception as e:
             raise e
