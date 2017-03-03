@@ -124,8 +124,12 @@ class Status(Model):
             sh.hostname("-b", hostname)
             sh.echo(hostname, _out="/etc/hostname")
 
-            # sed -i 's/ old$/ new/g' /etc/hosts
-            sh.sed("-i", "s/ {}$/ {}/g".format(old_hostname, hostname), "/etc/hosts")
+            try:
+                # sed -i 's/ old$/ new/g' /etc/hosts
+                sh.sed("-i", "s/ {}$/ {}/g".format(old_hostname, hostname), "/etc/hosts")
+            except:
+                with open("/etc/hosts", "a") as f:
+                    f.write("127.0.0.1       localhost {}\n".format(hostname))
             self.update(id=1, newObj={"hostname": hostname})
         except Exception as e:
             raise e
