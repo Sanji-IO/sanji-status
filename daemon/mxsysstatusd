@@ -129,9 +129,10 @@ class VQueue(object):
 
 
 if __name__ == '__main__':
-    cpu_queue = VQueue(10)
-    mem_queue = VQueue(10)
-    disk_queue = VQueue(10)
+    qsize = 5
+    cpu_queue = VQueue(qsize)
+    mem_queue = VQueue(qsize)
+    disk_queue = VQueue(qsize)
 
     tagv2 = TagV2.instance()
 

@@ -7,4 +7,5 @@ ExecStart=/usr/sbin/mxsysstatusd
 Restart=always
 
 [Install]
+Alias=mxsysstatusd.service
 WantedBy=multi-user.target
