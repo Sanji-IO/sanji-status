@@ -126,7 +126,8 @@ class Status(Model):
 
             try:
                 # sed -i 's/ old$/ new/g' /etc/hosts
-                sh.sed("-i", "s/ {}$/ {}/g".format(old_hostname, hostname), "/etc/hosts")
+                sh.sed("-i", "s/ {}$/ {}/g".format(old_hostname, hostname),
+                       "/etc/hosts")
             except:
                 with open("/etc/hosts", "a") as f:
                     f.write("127.0.0.1       localhost {}\n".format(hostname))
