@@ -64,17 +64,19 @@ class TestStatusClass(unittest.TestCase):
         hostname = self.bundle.get_hostname()
         self.assertEqual(hostname, "")
 
+    @patch("sh.sed")
     @patch("sh.echo")
     @patch("sh.hostname")
-    def test__set_hostname(self, mock_sethostname, mock_echo):
+    def test__set_hostname(self, mock_sethostname, mock_echo, mock_sed):
         """
         set_hostname
         """
         self.bundle.set_hostname("test")
 
+    @patch("sh.sed")
     @patch("sh.echo")
     @patch("sh.hostname")
-    def test__set_hostname_failed(self, mock_sethostname, mock_echo):
+    def test__set_hostname_failed(self, mock_sethostname, mock_echo, mock_sed):
         """
         set_hostname: failed
         """
