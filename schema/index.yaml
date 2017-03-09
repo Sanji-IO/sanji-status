@@ -15,6 +15,12 @@ produces:
 paths:
   /system/status:
     get:
+      parameters:
+      - name: fields
+        in: query
+        required: false
+        type: string
+        description: Only get selected fields. Using comma as separator (?fields=cpuUsage,uptimeSec,version)
       description: Get system status
       responses:
         200:

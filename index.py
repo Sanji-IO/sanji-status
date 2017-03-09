@@ -55,17 +55,37 @@ class Index(Sanji):
 
     @Route(methods="get", resource="/system/status")
     def get_status(self, message, response):
-        return response(
-            data={
-                "hostname": self.status.get_hostname(),
-                "version": self.status.get_product_version(),
-                "uptimeSec": self.status.get_uptime(),
-                "cpuUsage": self.status.get_cpu_usage(),
-                "memoryUsage": self.status.get_memory_usage(),
-                "memory": self.status.get_memory(),
-                "disks": self.status.get_disks()
-            }
-        )
+        if message.query.get("fields") is None:
+            return response(
+                data={
+                    "hostname": self.status.get_hostname(),
+                    "version": self.status.get_product_version(),
+                    "uptimeSec": self.status.get_uptime(),
+                    "cpuUsage": self.status.get_cpu_usage(),
+                    "memoryUsage": self.status.get_memory_usage(),
+                    "memory": self.status.get_memory(),
+                    "disks": self.status.get_disks()
+                }
+            )
+
+        fields = [_.strip() for _ in message.query.get("fields").split(',')]
+        data = {}
+        if "hostname" in fields:
+            data["hostname"] = self.status.get_hostname()
+        if "version" in fields:
+            data["version"] = self.status.get_product_version()
+        if "uptimeSec" in fields:
+            data["uptimeSec"] = self.status.get_uptime()
+        if "cpuUsage" in fields:
+            data["cpuUsage"] = self.status.get_cpu_usage()
+        if "memoryUsage" in fields:
+            data["memoryUsage"] = self.status.get_memory_usage()
+        if "memory" in fields:
+            data["memory"] = self.status.get_memory()
+        if "disks" in fields:
+            data["disks"] = self.status.get_disks()
+
+        return response(data=data)
 
     @Route(methods="put", resource="/system/status")
     def put_status(self, message, response, schema=HOSTNAME_SCHEMA):
