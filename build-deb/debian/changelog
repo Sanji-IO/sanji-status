@@ -1,3 +1,22 @@
+sanji-bundle-status (0.15.2-1) unstable; urgency=low
+
+  * refactor: change cpu usage average queue from 10 to 5
+  * build: add mxsysstatusd.service to support "service mxsysstatusd restart"
+
+ -- TC Huang <tc.huang@moxa.com>  Fri, 03 Mar 2017 16:48:13 +0800
+
+sanji-bundle-status (0.15.1-1) unstable; urgency=low
+
+  * fix: Modify hostname under `/etc/hosts`.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Fri, 03 Mar 2017 10:07:50 +0800
+
+sanji-bundle-status (0.15.0-1) unstable; urgency=low
+
+  * feat: add mxsysstatusd to report system tags
+
+ -- Donald Hsu <donald.hsu@moxa.com>  Thu, 23 Feb 2017 15:53:35 +0800
+
 sanji-bundle-status (0.14.2-1) unstable; urgency=low
 
   * fix: add remove extra for aliasName.

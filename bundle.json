@@ -1,6 +1,6 @@
 {
   "name": "status",
-  "version": "0.14.2",
+  "version": "0.15.2",
   "author": "Aeluin Chen",
   "email": "aeluin.chen@moxa.com",
   "description": "Provides system status information",
@@ -44,6 +44,10 @@
     {
       "methods": ["get", "put"],
       "resource": "/system/properties/:key"
+    },
+    {
+      "methods": "get",
+      "resource": "/mxc/system/equipments"
     }
   ]
 }
