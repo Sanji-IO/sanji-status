@@ -1,3 +1,9 @@
+sanji-bundle-status (0.17.0-1) unstable; urgency=low
+
+  * feat: packing all /var/log and ttl set to 120.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Tue, 21 Mar 2017 14:53:21 +0800
+
 sanji-bundle-status (0.16.0-1) unstable; urgency=low
 
   * feat: add querystring: fields for get status.

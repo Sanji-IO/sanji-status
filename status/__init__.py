@@ -36,15 +36,12 @@ def tar_syslog_files(output):
     """
     Tar and Compress (gz) syslog files to output directory
     """
-    filelist = glob.glob("/var/log/syslog*") + \
-        glob.glob("/var/log/uc8100-webapp*") + \
-        glob.glob("/var/log/sanji*")
-
+    filelist = glob.glob("/var/log")
     with tarfile.open(output, "w:gz") as tar:
         for name in filelist:
             if not os.path.exists(name):
                 continue
-            _logger.debug("Packing %s" % (name))
+            _logger.info("Packing %s" % (name))
             tar.add(name, arcname=os.path.basename(name))
 
     return output
