@@ -12,7 +12,7 @@
   "dependencies": {},
   "repository": "",
   "role": "model",
-  "ttl": 20,
+  "ttl": 120,
   "resources": [
     {
       "methods": [
