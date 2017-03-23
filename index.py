@@ -16,7 +16,7 @@ from sanji.connection.mqtt import Mqtt
 
 from voluptuous import Schema
 from voluptuous import Required, REMOVE_EXTRA, Length, Any, All
-from sh import pversion
+
 
 _logger = logging.getLogger("sanji.status")
 
@@ -52,18 +52,6 @@ class Index(Sanji):
         self.status = status.Status(name="status", path=path_root)
         self.properties = ModelInitiator(
             model_name="properties", model_path=path_root)
-
-        # Check aliasName
-        if self.properties.db.get("aliasName", "$ModelName") == "$ModelName":
-            self.set_alias()
-
-    def set_alias(self):
-        try:
-            version = pversion()
-            self.properties.db["aliasName"] = version.split()[0]
-        except Exception:
-            self.properties.db["aliasName"] = "ThingsPro"
-        self.properties.save_db()
 
     @Route(methods="get", resource="/system/status")
     def get_status(self, message, response):
