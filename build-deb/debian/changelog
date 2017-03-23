@@ -1,3 +1,9 @@
+sanji-bundle-status (0.18.0-1) unstable; urgency=low
+
+  * feat: use model name as default aliasName.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Thu, 23 Mar 2017 10:47:46 +0800
+
 sanji-bundle-status (0.17.0-1) unstable; urgency=low
 
   * feat: packing all /var/log and ttl set to 120.
