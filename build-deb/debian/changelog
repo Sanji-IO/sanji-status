@@ -1,3 +1,85 @@
+sanji-bundle-status (0.18.0-1) unstable; urgency=low
+
+  * feat: use model name as default aliasName.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Thu, 23 Mar 2017 10:47:46 +0800
+
+sanji-bundle-status (0.17.0-1) unstable; urgency=low
+
+  * feat: packing all /var/log and ttl set to 120.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Tue, 21 Mar 2017 14:53:21 +0800
+
+sanji-bundle-status (0.16.0-1) unstable; urgency=low
+
+  * feat: add querystring: fields for get status.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Thu, 09 Mar 2017 11:52:20 +0800
+
+sanji-bundle-status (0.15.2-1) unstable; urgency=low
+
+  * refactor: change cpu usage average queue from 10 to 5
+  * build: add mxsysstatusd.service to support "service mxsysstatusd restart"
+
+ -- TC Huang <tc.huang@moxa.com>  Fri, 03 Mar 2017 16:48:13 +0800
+
+sanji-bundle-status (0.15.1-1) unstable; urgency=low
+
+  * fix: Modify hostname under `/etc/hosts`.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Fri, 03 Mar 2017 10:07:50 +0800
+
+sanji-bundle-status (0.15.0-1) unstable; urgency=low
+
+  * feat: add mxsysstatusd to report system tags
+
+ -- Donald Hsu <donald.hsu@moxa.com>  Thu, 23 Feb 2017 15:53:35 +0800
+
+sanji-bundle-status (0.14.2-1) unstable; urgency=low
+
+  * fix: add remove extra for aliasName.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Tue, 21 Feb 2017 15:14:04 +0800
+
+sanji-bundle-status (0.14.1-1) unstable; urgency=low
+
+  * fix: add missing file.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Tue, 01 Nov 2016 14:40:51 +0800
+
+sanji-bundle-status (0.14.0-1) unstable; urgency=low
+
+  * feat: add system/properties endpoint.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Thu, 27 Oct 2016 15:08:41 +0800
+
+sanji-bundle-status (0.13.1-1) unstable; urgency=low
+
+  * fix: add file when build deb package
+  * fix: fix for collectd unixsocket communication
+
+ -- Donald Hsu <donald.hsu@moxa.com>  Fri, 21 Oct 2016 11:59:48 +0800
+
+sanji-bundle-status (0.13.0-1) unstable; urgency=low
+
+  * feat: add cpuUsage and memoryUsage
+  * test: fix testcase for cpuUsage and memoryUsage
+
+ -- Donald Hsu <donald.hsu@moxa.com>  Thu, 20 Oct 2016 11:19:48 +0800
+
+sanji-bundle-status (0.12.0-1) unstable; urgency=low
+
+  * feat: support change system password.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Tue, 18 Oct 2016 11:43:17 +0800
+
+sanji-bundle-status (0.11.0-1) unstable; urgency=low
+
+  * Add OpenAPI doc.
+  * Add reboot resource.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Thu, 03 Mar 2016 15:05:18 +0800
+
 sanji-bundle-status (0.10.2-1) unstable; urgency=low
 
   * Show build date in version field.

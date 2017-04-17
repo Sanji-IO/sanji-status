@@ -10,8 +10,11 @@ import re
 import tarfile
 import glob
 import netifaces
-
+from passlib.hash import sha512_crypt
+from sh import grep, cut, usermod
 from sanji.model import Model
+
+from libmxidaf_py import TagV2
 
 
 _logger = logging.getLogger("sanji.status")
@@ -33,25 +36,65 @@ def tar_syslog_files(output):
     """
     Tar and Compress (gz) syslog files to output directory
     """
-    filelist = glob.glob("/var/log/syslog*") + \
-        glob.glob("/var/log/uc8100-webapp*") + \
-        glob.glob("/var/log/sanji*")
-
+    filelist = glob.glob("/var/log")
     with tarfile.open(output, "w:gz") as tar:
         for name in filelist:
             if not os.path.exists(name):
                 continue
-            _logger.debug("Packing %s" % (name))
+            _logger.info("Packing %s" % (name))
             tar.add(name, arcname=os.path.basename(name))
 
     return output
+
+
+def get_password(username="moxa", shadow_file="/etc/shadow"):
+    return cut(grep(username, shadow_file), "-f", 2, "-d", ":").strip()
+
+
+def set_password(password, username="moxa", salt=None):
+    hashed_password = sha512_crypt.encrypt(password, rounds=10000)
+    return usermod("-p", hashed_password, username)
 
 
 class StatusError(Exception):
     pass
 
 
+class SysStatus(object):
+
+    def __init__(self):
+        self._tagv2 = TagV2.instance()
+        self._cpu_usage = 0.0
+        self._memory_usage = 0.0
+
+    def _on_tag_callback(self, equipment_name, tag_name, tag):
+        if equipment_name == "SYSTEM":
+            if tag_name == "cpu_usage":
+                self._cpu_usage = tag.value().as_float()
+            elif tag_name == "memory_usage":
+                self._memory_usage = tag.value().as_float()
+
+    def run(self):
+        self._tagv2.subscribe_callback(self._on_tag_callback)
+        self._tagv2.subscribe("SYSTEM", "cpu_usage")
+        self._tagv2.subscribe("SYSTEM", "memory_usage")
+
+    @property
+    def cpu_usage(self):
+        return self._cpu_usage
+
+    @property
+    def memory_usage(self):
+        return self._memory_usage
+
+
 class Status(Model):
+
+    def __init__(self, *args, **kwargs):
+        super(Status, self).__init__(*args, **kwargs)
+
+        self.sysstatus = SysStatus()
+        self.sysstatus.run()
 
     def get_hostname(self):
         """Get hostname
@@ -71,10 +114,20 @@ class Status(Model):
                 hostname (str): hostname to be updated
         """
         try:
+            old_hostname = self.get_hostname()
+
             is_valid_hostname(hostname)
 
             sh.hostname("-b", hostname)
             sh.echo(hostname, _out="/etc/hostname")
+
+            try:
+                # sed -i 's/ old$/ new/g' /etc/hosts
+                sh.sed("-i", "s/ {}$/ {}/g".format(old_hostname, hostname),
+                       "/etc/hosts")
+            except:
+                with open("/etc/hosts", "a") as f:
+                    f.write("127.0.0.1       localhost {}\n".format(hostname))
             self.update(id=1, newObj={"hostname": hostname})
         except Exception as e:
             raise e
@@ -120,6 +173,18 @@ class Status(Model):
         except Exception as e:
             _logger.error("Cannot get interfaces: %s" % e)
             return []
+
+    def _parse_collectd_value(self, value):
+        if len(value) != 1:
+            return 0.0
+        else:
+            return value[0].split('=')[1]
+
+    def get_cpu_usage(self):
+        return self.sysstatus.cpu_usage
+
+    def get_memory_usage(self):
+        return self.sysstatus.memory_usage
 
     def get_memory(self):
         return psutil.virtual_memory().total
@@ -195,8 +260,12 @@ class Status(Model):
             disks.append(disk)
         return disks
 
+    def reboot(self):
+        _logger.info("Rebooting...")
+        sh.reboot()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     path_root = os.path.dirname(os.path.abspath(__file__)) + "/../"
     status = Status(name="status", path=path_root)
     print status.get_hostname()

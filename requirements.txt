@@ -4,3 +4,4 @@ psutil
 sh
 requests
 netifaces
+passlib==1.6.5
