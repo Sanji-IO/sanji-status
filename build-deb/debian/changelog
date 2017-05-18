@@ -1,3 +1,9 @@
+sanji-bundle-status (0.18.1-1) unstable; urgency=low
+
+  * fix: Let storage alias using same format.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Thu, 18 May 2017 15:39:10 +0800
+
 sanji-bundle-status (0.18.0-1) unstable; urgency=low
 
   * feat: use model name as default aliasName.
