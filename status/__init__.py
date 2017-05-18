@@ -197,8 +197,13 @@ class Status(Model):
         if mapping["part"] is None:
             return alias
         part = mapping["part"].findall(dev.group(0))
+        try:
+            float(part[0])
+            part[0] = str(int(part[0]) + 1)
+        except ValueError:
+            part[0] = str(ord(part[0]) - 96)
         if part is not None:
-            alias += "-%s" % "-".join(part)
+            alias += "{}".format("-".join(part))
         return alias
 
     def disk_get_alias(self, device):
@@ -276,4 +281,6 @@ if __name__ == "__main__":
     print status.get_disks()
     print status.getAll()
     print status.get(id=1)
+    print status.disk_get_alias("/dev/mmcblk0p1")
+    print status.disk_get_alias("/dev/sda1")
     # status.set_hostname("test")
