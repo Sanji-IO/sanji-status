@@ -202,6 +202,8 @@ class Status(Model):
             part[0] = str(int(part[0]) + 1)
         except ValueError:
             part[0] = str(ord(part[0]) - 96)
+        except:
+            _logger.error("Cannot convert storage info.: {}".format(part[0]))
         if part is not None:
             alias += "{}".format("-".join(part))
         return alias
