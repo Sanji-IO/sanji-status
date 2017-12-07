@@ -1,3 +1,9 @@
+sanji-bundle-status (0.18.2-1) unstable; urgency=low
+
+  * fix: sync hostname on boot time.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Thu, 07 Dec 2017 16:26:14 +0800
+
 sanji-bundle-status (0.18.1-1) unstable; urgency=low
 
   * fix: Let storage alias using same format.
