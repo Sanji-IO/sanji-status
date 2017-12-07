@@ -57,6 +57,11 @@ class Index(Sanji):
         if self.properties.db.get("aliasName", "$ModelName") == "$ModelName":
             self.set_alias()
 
+        # Check hostname
+        saved_hostname = self.status.get(id=1).get("hostname")
+        if saved_hostname != self.status.get_hostname():
+            self.status.set_hostname(saved_hostname)
+
     def set_alias(self):
         try:
             version = sh.pversion()

@@ -92,7 +92,6 @@ class Status(Model):
 
     def __init__(self, *args, **kwargs):
         super(Status, self).__init__(*args, **kwargs)
-
         self.sysstatus = SysStatus()
         self.sysstatus.run()
 
@@ -138,7 +137,6 @@ class Status(Model):
             Return:
                 version (str): product version (#.#)
         """
-        # FIXME: get version via pversion
         try:
             return " ".join(sh.pversion().split(" ")[2:])
         except:
