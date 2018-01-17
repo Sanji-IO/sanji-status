@@ -22,27 +22,13 @@ def _parse_collectd_value(value):
         return value[0].split('=')[1]
 
 
-def get_cpu_usage():
-    clt = Collectd()
-
-    # TODO: VAL only for UC-8100/UC-8100-ME
-    value = clt.get('localhost/cpu-0/cpu-user')
-    cpu_user = float(_parse_collectd_value(value))
-    value = clt.get('localhost/cpu-0/cpu-system')
-    cpu_sys = float(_parse_collectd_value(value))
-
-    usage = cpu_user + cpu_sys
+def get_cpu_usage(clt):
+    usage = clt.get_cpu_usage()
     return usage if usage <= 100.0 else 100.0
 
 
-def get_memory_usage():
-    clt = Collectd()
-
-    # TODO: VAL only for UC-8100/UC8100-ME
-    value = clt.get('localhost/memory/memory-used')
-    memory_used = float(_parse_collectd_value(value))
-
-    usage = memory_used * 100.0 / get_memory()
+def get_memory_usage(clt):
+    usage = clt.get_mem_usage()
     return usage if usage <= 100.0 else 100.0
 
 
@@ -65,10 +51,50 @@ class Collectd(object):
     def __init__(self, path=UNIX_SOCKET_PATH):
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self._path = path
+        self._cpus = []
+        self._host = 'localhost'
         self._sock.connect(self._path)
+
+        # get real host name 
+        lines = []
+        self._listval = self._command('LISTVAL')
+        if self._listval: 
+            lines = self._readlines(self._listval)
+            self._host = lines[0].split(' ')[1].split('/')[0]
+            
+        # get cpu core number
+        for L in lines:
+            key = L.split('/')[1]
+            if not 'cpu' in key: continue
+            if key in self._cpus: continue
+            self._cpus.append(key);
 
     def __del__(self):
         self._sock.close()
+
+    def get_cpu_usage(self):
+        result = 0.0
+        
+        if len(self._cpus) <= 0: return result
+        
+        for cpu in self._cpus:
+            value = self.get(self._host + '/' + cpu + '/cpu-user')
+            cpu_user = float(_parse_collectd_value(value))
+            value = self.get(self._host + '/' + cpu + '/cpu-system')
+            cpu_sys = float(_parse_collectd_value(value))
+            result += (cpu_user + cpu_sys)
+        
+        result = result/len(self._cpus)
+        return result
+
+    def get_mem_usage(self):
+        result = 0.0
+        
+        value = self.get(self._host + '/memory/memory-used')
+        memory_used = float(_parse_collectd_value(value))
+        result = memory_used * 100.0 / get_memory()
+        
+        return result
 
     def get(self, key, flush=True):
         num = self._command('GETVAL "' + key + '"')
@@ -112,7 +138,6 @@ class Collectd(object):
                 break
         return lines
 
-
 class VQueue(object):
 
     def __init__(self, qsize):
@@ -142,10 +167,11 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, stop_handler)
     signal.signal(signal.SIGTERM, stop_handler)
 
+    clt = Collectd()
     while True:
         try:
-            cpu_queue.push(get_cpu_usage())
-            mem_queue.push(get_memory_usage())
+            cpu_queue.push(get_cpu_usage(clt))
+            mem_queue.push(get_memory_usage(clt))
             disk_queue.push(get_disk_usage())
             tagv2.publish(
                 "SYSTEM",
