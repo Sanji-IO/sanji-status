@@ -55,45 +55,47 @@ class Collectd(object):
         self._host = 'localhost'
         self._sock.connect(self._path)
 
-        # get real host name 
+        # get real host name
         lines = []
         self._listval = self._command('LISTVAL')
-        if self._listval: 
+        if self._listval:
             lines = self._readlines(self._listval)
             self._host = lines[0].split(' ')[1].split('/')[0]
-            
+
         # get cpu core number
-        for L in lines:
-            key = L.split('/')[1]
-            if not 'cpu' in key: continue
-            if key in self._cpus: continue
-            self._cpus.append(key);
+        for line in lines:
+            key = line.split('/')[1]
+            if not 'cpu' in key:
+                continue
+            if key in self._cpus:
+                continue
+            self._cpus.append(key)
 
     def __del__(self):
         self._sock.close()
 
     def get_cpu_usage(self):
         result = 0.0
-        
-        if len(self._cpus) <= 0: return result
-        
+        if len(self._cpus) <= 0:
+            return result
+
         for cpu in self._cpus:
             value = self.get(self._host + '/' + cpu + '/cpu-user')
             cpu_user = float(_parse_collectd_value(value))
             value = self.get(self._host + '/' + cpu + '/cpu-system')
             cpu_sys = float(_parse_collectd_value(value))
-            result += (cpu_user + cpu_sys)
-        
+            result += (cpu_user + cpu_sys) 
+
         result = result/len(self._cpus)
         return result
 
     def get_mem_usage(self):
         result = 0.0
-        
+
         value = self.get(self._host + '/memory/memory-used')
         memory_used = float(_parse_collectd_value(value))
         result = memory_used * 100.0 / get_memory()
-        
+
         return result
 
     def get(self, key, flush=True):
@@ -144,20 +146,20 @@ class VQueue(object):
         self.queue = collections.deque([], qsize)
 
     def push(self, value):
-            self.queue.append(value)
+        self.queue.append(value)
 
     def avg(self):
         summary = 0.0
-        for v in self.queue:
-            summary += v
+        for value in self.queue:
+            summary += value
         return summary / len(self.queue)
 
 
 if __name__ == '__main__':
-    qsize = 5
-    cpu_queue = VQueue(qsize)
-    mem_queue = VQueue(qsize)
-    disk_queue = VQueue(qsize)
+    _qsize = 5
+    cpu_queue = VQueue(_qsize)
+    mem_queue = VQueue(_qsize)
+    disk_queue = VQueue(_qsize)
 
     tagv2 = TagV2.instance()
 
@@ -167,11 +169,11 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, stop_handler)
     signal.signal(signal.SIGTERM, stop_handler)
 
-    clt = Collectd()
+    _clt = Collectd()
     while True:
         try:
-            cpu_queue.push(get_cpu_usage(clt))
-            mem_queue.push(get_memory_usage(clt))
+            cpu_queue.push(get_cpu_usage(_clt))
+            mem_queue.push(get_memory_usage(_clt))
             disk_queue.push(get_disk_usage())
             tagv2.publish(
                 "SYSTEM",
