@@ -1,3 +1,9 @@
+sanji-bundle-status (0.18.3-1) unstable; urgency=low
+
+  * fix: daemon cpu/memory query compatible to multiple platform
+
+ -- Justin CP Tung <justincp.tung@moxa.com>  Wed, 17 Jan 2018 16:26:14 +0800
+
 sanji-bundle-status (0.18.2-1) unstable; urgency=low
 
   * fix: sync hostname on boot time.
