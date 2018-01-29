@@ -1,3 +1,9 @@
+sanji-bundle-status (0.18.4-1) unstable; urgency=low
+
+  * add depends version
+
+ -- Justin CP Tung <justincp.tung@moxa.com>  Thu, 25 Jan 2018 11:14:21 +0800
+
 sanji-bundle-status (0.18.3-1) unstable; urgency=low
 
   * fix: daemon cpu/memory query compatible to multiple platform
