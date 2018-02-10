@@ -28,7 +28,8 @@ class MockMessage(object):
 
 class TestIndexClass(unittest.TestCase):
 
-    def setUp(self):
+    @patch.object(status, "set_hostname")
+    def setUp(self, mock_set_hostname):
         self.root_path = os.path.abspath(os.path.dirname(__file__) + "/../")
         self.jsons = glob.glob(os.path.join(self.root_path, "data/*.json"))
         self.backups = glob.glob(os.path.join(self.root_path, "data/*.backup"))
