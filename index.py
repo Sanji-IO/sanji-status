@@ -40,7 +40,8 @@ class Index(Sanji):
 
     PROPERTIES_SCHEMA = {
         "aliasName": ALIASNAME_SCHEMA,
-        "gps": GPS_SCHEMA
+        "gps": GPS_SCHEMA,
+        "defaultRoute": ALIASNAME_SCHEMA
     }
 
     UPDATE_PROPERTY_SCHEMA = Schema({

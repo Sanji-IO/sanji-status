@@ -1,3 +1,9 @@
+sanji-bundle-status (0.18.5-1) unstable; urgency=low
+
+  * feat: add system property `defaultRoute`.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Sat, 10 Feb 2018 16:16:45 +0800
+
 sanji-bundle-status (0.18.4-1) unstable; urgency=low
 
   * add depends version
