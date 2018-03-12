@@ -39,6 +39,8 @@ class Index(Sanji):
     ALIASNAME_SCHEMA = Schema(All(Any(unicode, str), Length(0, 255)))
 
     PROPERTIES_SCHEMA = {
+        "modelName": ALIASNAME_SCHEMA,
+        "softwareVersion": ALIASNAME_SCHEMA,
         "aliasName": ALIASNAME_SCHEMA,
         "gps": GPS_SCHEMA,
         "defaultRoute": ALIASNAME_SCHEMA
@@ -58,6 +60,11 @@ class Index(Sanji):
         if self.properties.db.get("aliasName", "$ModelName") == "$ModelName":
             self.set_alias()
 
+        # Check modelname and softwareversion
+        if (self.properties.db.get("modelName", "$ModelName") == "$ModelName" or
+                self.properties.db.get("softwareVersion", "$SoftwareVersion") == "$SoftwareVersion"):
+            self.set_prodoct_info()
+
         # Check hostname
         saved_hostname = self.status.get(id=1).get("hostname")
         if saved_hostname != self.status.get_hostname():
@@ -69,6 +76,17 @@ class Index(Sanji):
             self.properties.db["aliasName"] = version.split()[0]
         except Exception:
             self.properties.db["aliasName"] = "ThingsPro"
+        self.properties.save_db()
+
+    def set_prodoct_info(self):
+        try:
+            version = sh.pversion().replace("\n", "")
+            self.properties.db["modelName"] = version.split()[0]
+            self.properties.db["softwareVersion"] = version.replace(
+                version.split()[0]+" ", "")
+        except Exception:
+            self.properties.db["modelName"] = ""
+            self.properties.db["softwareVersion"] = ""
         self.properties.save_db()
 
     @Route(methods="get", resource="/system/status")

@@ -1,4 +1,6 @@
 {
+	"softwareVersion": "$SoftwareVersion",
+	"modelName": "$ModelName",
 	"aliasName": "$ModelName",
 	"defaultRoute": "",
 	"gps": {
