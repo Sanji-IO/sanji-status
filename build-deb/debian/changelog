@@ -1,3 +1,9 @@
+sanji-bundle-status (0.19.0-1) unstable; urgency=low
+
+  * feat: add system property softwareVersion and modelName.
+
+ -- Gary Hsu <garywl.hsu@moxa.com>  Wed, 30 May 2018 13:25:21 +0800
+
 sanji-bundle-status (0.18.5-1) unstable; urgency=low
 
   * feat: add system property `defaultRoute`.
